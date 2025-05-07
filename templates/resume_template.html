@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ resume_data.name }} - Resume</title>
+    <link rel="stylesheet" href="static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="resume-container" style="page-break-after: avoid;">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <!-- Contact Information -->
+            <div class="contact-section">
+                {% if resume_data.contact.phone %}
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>{{ resume_data.contact.phone }}</span>
+                </div>
+                {% endif %}
+                
+                {% if resume_data.contact.email %}
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{ resume_data.contact.email }}</span>
+                </div>
+                {% endif %}
+                
+                {% if resume_data.contact.linkedin %}
+                <div class="contact-item">
+                    <i class="fab fa-linkedin"></i>
+                    <span><a href="{{ resume_data.contact.linkedin }}" target="_blank">LinkedIn</a></span>
+                </div>
+                {% endif %}
+                
+                {% if resume_data.contact.github %}
+                <div class="contact-item">
+                    <i class="fab fa-github"></i>
+                    <span><a href="{{ resume_data.contact.github }}" target="_blank">GitHub</a></span>
+                </div>
+                {% endif %}
+                
+                {% if resume_data.contact.website %}
+                <div class="contact-item">
+                    <i class="fas fa-globe"></i>
+                    <span><a href="{{ resume_data.contact.website }}" target="_blank">{{ resume_data.contact.website }}</a></span>
+                </div>
+                {% endif %}
+                
+                {% if resume_data.contact.location %}
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ resume_data.contact.location }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Industry Expertise Section -->
+            <div class="section industry-expertise">
+                <h2>INDUSTRY EXPERTISE</h2>
+                <div class="expertise-items">
+                    {% if resume_data.skills and resume_data.skills.programming_languages %}
+                        {% set sorted_skills = resume_data.skills.programming_languages | sort(attribute='name') | sort(attribute='rating', reverse=True) %}
+                        {% for skill in sorted_skills %}
+                            <div class="expertise-item">
+                                <div class="expertise-name">{{ skill.name }}</div>
+                                <div class="expertise-bar-container">
+                                    <div class="expertise-bar" style="width: {{ (skill.rating / 5) * 100 }}%;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Strengths Section -->
+            <div class="section strengths">
+                <h2>STRENGTHS</h2>
+                <div class="strength-items">
+                    <!-- Extract key strengths from profile or manually define -->
+                    <div class="strength-item">
+                        <div class="strength-icon"><i class="fas fa-brain"></i></div>
+                        <div class="strength-text">
+                            <div class="strength-title">Logical approach to problem-solving</div>
+                        </div>
+                    </div>
+                    
+                    <div class="strength-item">
+                        <div class="strength-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div class="strength-text">
+                            <div class="strength-title">Initiative: ability to learn new things on your own accord</div>
+                        </div>
+                    </div>
+                    
+                    <div class="strength-item">
+                        <div class="strength-icon"><i class="fas fa-comments"></i></div>
+                        <div class="strength-text">
+                            <div class="strength-title">Communication skills: can easily demystify technical jargon</div>
+                        </div>
+                    </div>
+                    
+                    <div class="strength-item">
+                        <div class="strength-icon"><i class="fas fa-users"></i></div>
+                        <div class="strength-text">
+                            <div class="strength-title">Confident at training internal & external stakeholders</div>
+                        </div>
+                    </div>
+                    
+                    <div class="strength-item">
+                        <div class="strength-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="strength-text">
+                            <div class="strength-title">Highly analytical: can develop solutions to complex problems</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SDKs & APIs Section (with bar graphs) -->
+            <div class="section sdks-apis-sidebar">
+                <h2>SDKs & APIs</h2>
+                <div class="expertise-items">
+                    {% if resume_data.skills and resume_data.skills.sdks_apis %}
+                        {% set sorted_skills = resume_data.skills.sdks_apis | sort(attribute='name') | sort(attribute='rating', reverse=True) %}
+                        {% for skill in sorted_skills %}
+                            <div class="expertise-item">
+                                <div class="expertise-name">{{ skill.name }}</div>
+                                <div class="expertise-bar-container">
+                                    <div class="expertise-bar" style="width: {{ (skill.rating / 5) * 100 }}%;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Education Section (if available) -->
+            {% if resume_data.education %}
+            <div class="section education-sidebar">
+                <h2>EDUCATION</h2>
+                <div class="education-items">
+                    {% for edu in resume_data.education %}
+                    <div class="education-item">
+                        <div class="education-degree">{{ edu.degree }}</div>
+                        <div class="education-school">{{ edu.institution }}</div>
+                        {% if edu.graduation_year %}
+                        <div class="education-year">{{ edu.graduation_year }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Personal Projects -->
+            {% if resume_data.personal_projects %}
+            <div class="section projects-sidebar">
+                <h2>PROJECTS</h2>
+                <div class="projects-items">
+                    {% for project in resume_data.personal_projects %}
+                    <div class="project-item">
+                        <div class="project-name">{{ project.name }}</div>
+                        <div class="project-description">{{ project.description | truncate(80) }}</div>
+                        {% if project.technologies %}
+                        <div class="project-tech">
+                            <i class="fas fa-code"></i> {{ project.technologies | join(', ') | truncate(40) }}
+                        </div>
+                        {% endif %}
+                        {% if project.app_store_link and project.app_store_link != "" %}
+                        <div class="project-link">
+                            <a href="{{ project.app_store_link }}" target="_blank"><i class="fab fa-app-store-ios"></i> App Store</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Open Source Contributions -->
+            {% if resume_data.open_source_contributions %}
+            <div class="section opensource-sidebar">
+                <h2>OPEN SOURCE</h2>
+                <div class="opensource-items">
+                    {% for project in resume_data.open_source_contributions %}
+                    <div class="opensource-item">
+                        <div class="opensource-name">{{ project.name }}</div>
+                        <div class="opensource-description">{{ project.description | truncate(80) }}</div>
+                        {% if project.links %}
+                        <div class="opensource-links">
+                            {% for link in project.links %}
+                            <div class="opensource-link">
+                                <a href="{{ link.url }}" target="_blank"><i class="fas fa-external-link-alt"></i> {{ link.title }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Name and Title -->
+            <div class="header-section">
+                <h1>{{ resume_data.name | upper }}</h1>
+                <div class="title">{{ resume_data.title if resume_data.title else "Mobile Architect & Engineer" }}</div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="section summary">
+                <h2>SUMMARY</h2>
+                <p>
+                {% if resume_data.profile is string %}
+                    {{ resume_data.profile }}
+                {% elif resume_data.profile is iterable and resume_data.profile is not mapping %}
+                    {{ resume_data.profile[0] }}
+                {% endif %}
+                </p>
+            </div>
+
+            <!-- Experience Section -->
+            <div class="section experience">
+                <h2>EXPERIENCE</h2>
+                {% if resume_data.experience %}
+                    {% for job in resume_data.experience %}
+                        <div class="job">
+                            <div class="job-title">{{ job.title }}</div>
+                            <div class="company-name">{{ job.company }}</div>
+                            <div class="job-meta">
+                                <div class="job-meta-row">
+                                    <span class="job-dates">
+                                        <i class="far fa-calendar-alt"></i> 
+                                        {{ job.start_date }} - {{ job.end_date if job.end_date else "Present" }}
+                                    </span>
+                                    <span class="job-location">
+                                        <i class="fas fa-map-marker-alt"></i> 
+                                        {{ job.location }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if job.responsibilities %}
+                                <ul class="job-responsibilities">
+                                    {% for responsibility in job.responsibilities %}
+                                        <li>{{ responsibility }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Languages section moved to sidebar -->
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-left">www.joemattiello.dev</div>
+                <div class="footer-right">
+                    <span>Powered by</span>
+                    <img src="https://enhancv.com/favicon.ico" alt="Enhancv" height="16">
+                    <span>Enhancv</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

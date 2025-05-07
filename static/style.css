@@ -1,0 +1,487 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    line-height: 1.5;
+    color: #333;
+    background-color: #fff;
+    font-size: 10pt;
+}
+
+/* Main Container - using table layout for better print compatibility */
+.resume-container {
+    display: table; /* Use table layout instead of flex */
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-collapse: collapse;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    display: table-cell; /* Table cell for better print layout */
+    width: 30%;
+    background-color: #e0f7fa; /* Light teal/blue background */
+    padding: 12px; /* Further reduced padding */
+    color: #333;
+    vertical-align: top;
+}
+
+/* Contact Section */
+.contact-section {
+    margin-bottom: 30px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.contact-item i {
+    color: #1c9c7c; /* Teal icon color */
+    margin-right: 10px;
+    width: 16px;
+    text-align: center;
+}
+
+.contact-item a {
+    color: #333;
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    text-decoration: underline;
+    color: #1c9c7c;
+}
+
+/* Industry Expertise Section */
+.section.industry-expertise {
+    margin-bottom: 30px;
+}
+
+.section h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.expertise-item {
+    margin-bottom: 8px; /* Reduced from 15px for tighter spacing */
+}
+
+.expertise-name {
+    font-size: 0.85em; /* Slightly smaller font */
+    margin-bottom: 3px; /* Reduced from 5px */
+}
+
+.expertise-bar-container {
+    height: 8px; /* Reduced from 10px */
+    background-color: #e0e0e0;
+    border-radius: 4px; /* Reduced from 5px */
+    overflow: hidden;
+}
+
+.expertise-bar {
+    height: 100%;
+    background-color: #1c9c7c; /* Teal bar color */
+    border-radius: 5px;
+}
+
+/* Strengths Section */
+.section.strengths {
+    page-break-inside: avoid; /* Prevent section from breaking across pages */
+    break-inside: avoid;
+}
+
+.strength-item {
+    display: flex;
+    flex-direction: row; /* Ensure horizontal layout */
+    align-items: flex-start;
+    margin-bottom: 15px; /* Reduced spacing between items */
+    width: 100%; /* Ensure full width */
+    page-break-inside: avoid; /* Prevent items from breaking across pages */
+    break-inside: avoid;
+}
+
+.strength-icon {
+    color: #1c9c7c; /* Teal icon color */
+    margin-right: 10px;
+    font-size: 1.2em;
+    flex: 0 0 20px; /* Fixed width, don't grow or shrink */
+    text-align: center;
+    padding-top: 2px;
+}
+
+.strength-text {
+    flex: 1 1 auto; /* Grow and shrink as needed */
+    max-width: calc(100% - 30px); /* Ensure text has room to wrap */
+    overflow-wrap: break-word; /* Force word wrapping */
+    word-wrap: break-word;
+}
+
+.strength-title {
+    font-size: 0.85em; /* Slightly smaller font */
+    line-height: 1.4;
+    display: block; /* Block display to ensure proper wrapping */
+    width: 100%;
+}
+
+/* Main Content Styles */
+.main-content {
+    display: table-cell; /* Table cell for better print layout */
+    width: 70%;
+    padding: 12px; /* Further reduced padding */
+    vertical-align: top;
+}
+
+/* Header Section */
+.header-section {
+    margin-bottom: 30px;
+}
+
+.header-section h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.title {
+    font-size: 1.1em;
+    color: #666;
+}
+
+/* Section Styles */
+.main-content .section {
+    margin-bottom: 30px;
+}
+
+.main-content .section h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+/* Summary Section */
+.summary p {
+    margin-bottom: 15px;
+    font-size: 0.95em;
+}
+
+/* Experience Section */
+.job {
+    margin-bottom: 25px;
+}
+
+.job-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #1c9c7c; /* Teal color for job titles */
+}
+
+.company-name {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.job-meta {
+    margin-bottom: 10px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+.job-meta-row {
+    display: flex;
+    justify-content: space-between; /* Pushes dates left and location right */
+    width: 100%;
+}
+
+.job-dates, .job-location {
+    display: flex;
+    align-items: center;
+}
+
+.job-meta i {
+    margin-right: 5px;
+}
+
+.job-responsibilities {
+    list-style-type: disc;
+    padding-left: 20px;
+    font-size: 0.9em;
+}
+
+.job-responsibilities li {
+    margin-bottom: 5px;
+}
+
+/* Languages Section - Main Content (now moved to sidebar) */
+.language-items {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.language-item {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.language-name {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.language-level {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.language-dots {
+    display: flex;
+}
+
+.dot {
+    width: 10px; /* Slightly smaller dots */
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+    background-color: #e0e0e0; /* Light grey for empty dots */
+}
+
+.dot.filled {
+    background-color: #1c9c7c; /* Teal for filled dots */
+}
+
+/* Languages Section - Sidebar */
+.languages-sidebar {
+    margin-bottom: 20px;
+}
+
+.languages-sidebar .language-item {
+    margin-bottom: 12px;
+}
+
+.languages-sidebar .language-name {
+    font-size: 0.9em;
+}
+
+.languages-sidebar .language-level {
+    font-size: 0.8em;
+    margin-bottom: 4px;
+}
+
+/* Education Section - Sidebar */
+.education-sidebar {
+    margin-bottom: 20px;
+}
+
+.education-item {
+    margin-bottom: 12px;
+}
+
+.education-degree {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+}
+
+.education-school {
+    font-size: 0.85em;
+    margin-bottom: 2px;
+}
+
+.education-year {
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* Open Source Section - Sidebar */
+.opensource-sidebar {
+    margin-bottom: 20px;
+}
+
+.opensource-item {
+    margin-bottom: 15px;
+}
+
+.opensource-name {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+    color: #1c9c7c; /* Teal color to match other elements */
+}
+
+.opensource-description {
+    font-size: 0.8em;
+    line-height: 1.4;
+    margin-bottom: 3px;
+}
+
+.opensource-links {
+    margin-top: 3px;
+}
+
+.opensource-link {
+    font-size: 0.8em;
+    margin-bottom: 2px;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.opensource-link a {
+    color: #333;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.opensource-link a:hover {
+    color: #1c9c7c;
+    text-decoration: underline;
+}
+
+.opensource-link i {
+    font-size: 0.9em;
+    margin-right: 3px;
+}
+
+/* Personal Projects Section - Sidebar */
+.projects-sidebar {
+    margin-bottom: 20px;
+}
+
+.project-item {
+    margin-bottom: 15px;
+}
+
+.project-name {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+    color: #1c9c7c; /* Teal color to match other elements */
+}
+
+.project-description {
+    font-size: 0.8em;
+    line-height: 1.4;
+    margin-bottom: 3px;
+}
+
+.project-tech {
+    font-size: 0.75em;
+    margin-bottom: 3px;
+    color: #666;
+}
+
+.project-tech i {
+    font-size: 0.9em;
+    margin-right: 3px;
+    color: #1c9c7c;
+}
+
+.project-link {
+    font-size: 0.8em;
+}
+
+.project-link a {
+    color: #333;
+    text-decoration: none;
+}
+
+.project-link a:hover {
+    color: #1c9c7c;
+    text-decoration: underline;
+}
+
+.project-link i {
+    font-size: 0.9em;
+    margin-right: 3px;
+}
+
+/* Footer */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    font-size: 0.8em;
+    color: #999;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+}
+
+.footer-right img {
+    margin: 0 5px;
+}
+
+/* Print Styles - for PDF generation */
+@media print {
+    @page {
+        size: letter; /* Use letter size */
+        margin: 0.5cm; /* Minimal margins */
+    }
+    
+    body {
+        background-color: #fff;
+        margin: 0;
+        padding: 0;
+        font-size: 9pt; /* Smaller font for print */
+    }
+    
+    .resume-container {
+        width: 100%;
+        max-width: none;
+        display: table !important;
+        table-layout: fixed;
+    }
+    
+    .sidebar {
+        width: 30%;
+        display: table-cell !important;
+    }
+    
+    .main-content {
+        width: 70%;
+        display: table-cell !important;
+    }
+    
+    /* Reduce spacing for print */
+    .section {
+        margin-bottom: 15px;
+    }
+    
+    .section h2 {
+        margin-bottom: 10px;
+    }
+    
+    .job {
+        margin-bottom: 15px;
+    }
+    
+    .strength-item {
+        margin-bottom: 8px;
+    }
+    
+    /* Ensure no page breaks within elements */
+    .resume-container, .sidebar, .main-content {
+        page-break-inside: avoid !important;
+    }
+}

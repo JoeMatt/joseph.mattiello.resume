@@ -1,0 +1,402 @@
+name: Joseph Mattiello
+contact:
+  website: http://joemattiello.dev
+  phone: "+1 (646) 771-8603"
+  linkedin: https://www.linkedin.com/in/joemattiello/
+  github: https://github.com/JoeMatt
+  email: mail@joemattiello.com
+
+profile: "Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full Stack, Systems Architecture, CI/CD, and DevOps/Automation. Extensive experience leading iOS & Android teams and developing for both platforms using native and cross-platform toolkits (e.g., ReactNative, Fuse.io). Proven track record building web and mobile native frontends, backends, applications, infrastructure, and embedded/IoT systems. Proficient in A.I. tools and code generation."
+
+experience:
+  - company: Wayfair
+    location: New York, NY (Remote)
+    title: L4 Mobile Engineer
+    start_date: "01/2025"
+    responsibilities:
+      - Led and contributed to the development and enhancement of the product discovery feature-set, improving user engagement and conversion.
+      - Spearheaded initiatives to optimize application startup performance and reduce network overhead, resulting in a faster and more responsive user experience.
+      - Revamped homepage layout and implemented modern UI elements, including shimmer effects for loading states, to improve visual appeal and perceived performance.
+      - Collaborated on the design and implementation of new UI components for upcoming features, ensuring a consistent and intuitive user interface.
+      - Proactively identified and addressed performance bottlenecks across multiple application modules and teams, driving significant improvements in overall app stability and speed.
+  - company: Matti Media LLC
+    location: New York, NY
+    title: Founder
+    start_date: "05/2021"
+    end_date:
+    responsibilities:
+      - Creator of Provenance-EMU, a multi-platform video game console emulator for iOS/tvOS/macOS, built entirely in Swift. 100k+ downloads in first few months.
+      - Ported dozens of C/C++ emulators to Swift Package Manager, optimized for ARM platforms, and applied various performance and compatibility patches.
+      - Developed a full SwiftUI user interface and integrated native iOS features like Spotlight, QuickLook, FileProvider, Stickers, and Siri extensions.
+  - company: Fitness AI
+    location: New York, NY
+    title: Contract iOS Engineer
+    start_date: "04/2021"
+    end_date: "05/2021"
+    responsibilities:
+      - Improved project organization and code structure.
+      - Implemented comprehensive crash and console logging with breadcrumbs for improved error tracking.
+      - Developed new UI features, including drag-and-drop reordering for table view items.
+      - Addressed performance bottlenecks and enhanced application stability.
+  - company: Cameo
+    location: New York, NY
+    title: Principal iOS Engineer
+    start_date: "10/2020"
+    end_date: "03/2021"
+    app_store_url: https://apps.apple.com/us/app/cameo-personal-celeb-videos/id1258311581
+    media_urls:
+      - https://www.cameo.com/
+    responsibilities:
+      - Served as the first native iOS Engineer on a mature ReactNative stack, bridging native capabilities with cross-platform development.
+      - Integrated HD asynchronous video compression, significantly improving video quality while reducing bandwidth and AWS costs.
+      - Implemented AR filter support, enhancing visual quality and user experience based on feedback from top talent.
+      - Focused on optimizing performance and ensuring seamless feature integration.
+      - Reduced memory overhead, improved startup and login times, and optimized network usage.
+      - Migrated and consolidated CI/CD pipelines from shell scripts/CircleCI to GitHub Actions, achieving over 10x speed improvements in PR validation.
+  - company: NewsCorp Inc.
+    location: New York, NY
+    title: Director iOS Platform (Global HQ)
+    start_date: "04/2019"
+    end_date: "02/2020"
+    app_store_url: https://apps.apple.com/us/app/knewz-current-us-news-feed/id1484853366
+    responsibilities:
+      - As iOS Platform Lead in the central NewsCorp app platform team (one of 8 core members), directed and managed internal, sub-brand, and contract developers working on platform and brand-specific applications.
+      - Managed iOS developers across multiple global regions (NYC, Argentina, London, Ukraine, Russia, Hong Kong, Sydney & Bangalore) working in parallel on various apps.
+      - Led the team that built the core SDK foundation used by all NewsCorp brands (e.g., DowJones, NYPost, The Australian, Barrons, Times UK) for their mobile applications. Directly managed platform SDK codebase, pull requests, and internal engineering resources loaned to brand app teams.
+      - Fostered a private "open source" model for SDKs, enabling internal and brand developers to contribute feature requests and pull requests, with rapid integration via platform town halls.
+      - Responsibilities included establishing CI/CD for brand apps, creating documentation, tutorials, code samples, and app templates for developers.
+      - Established and staffed a new full-time iOS satellite team in Barcelona; also responsible for restaffing and training existing teams in Argentina (Spark), Bangalore (NTS), and Ukraine/Russia (EPAM).
+      - Hired, trained, and led the iOS team for the new Knewz app, a high-profile project overseen by CEO Robert Thomson and Chairman Rupert Murdoch. Secured an unsolicited App Store promotion from Apple. Maintained a 4.5+ star rating during tenure.
+  - company: Salido Inc.
+    location: New York, NY
+    title: Lead Developer
+    start_date: "08/2018"
+    end_date: "04/2019"
+    responsibilities:
+      - As Lead Developer, managed the front-end development team, coordinated with back-end and other front-end teams on feature development, and led architectural design for new technical business relationships and 3rd-party vendor integrations.
+      - Developed the first Swift-native XML-SOAP framework with full Codable support while integrating with legacy vendors. Refactored the monolithic project into independent frameworks and separate repositories, streamlining global team coordination using CI/CD tools (CircleCI, Fastlane, Carthage, Rome, custom scripts) to mitigate QA and merge conflicts.
+      - Actively created development tools, documentation, and templates to promote improved organization and coding standards. Introduced the team to modern development practices including Promises, RxSwift, MVVM-C, Clean Architecture, and Objective-C to Swift interoperability.
+  - company: Hearst Digital News
+    location: New York, NY
+    title: Lead Mobile Architect / Team Lead
+    start_date: "05/2012"
+    end_date: "06/2018"
+    app_store_url: https://apps.apple.com/us/app/san-antonio-express-news/id474259540
+    media_urls:
+      - https://www.hearst.com/newspapers
+    responsibilities:
+      - As Lead Developer, responsibilities included code review, peer training, ticket delegation, build submission, and release scheduling in collaboration with project managers. Managed a team of dedicated mobile developers with occasional cross-development with web and back-end teams.
+      - Maintained a 4+ star App Store rating through multiple update releases. Initiated conversion of the codebase to Objective-C 2.0 and ARC, resulting in an 80%+ reduction in crash reports and a 30% reduction in memory footprint. Refactored the shared codebase across four apps into a tiered build system of shared base and UI libraries, enabling future mobile/desktop app development and code sharing across Hearst teams.
+      - "From Summer 2015, led the architecture and development of a new universal app (iOS 8+) using Swift 2.0, Objective-C, CoreData, CoreText, and Storyboards with size classes. Supported Apple Watch, Today Screen, and Force Touch extensions. Served as lead architect and developer, supported by two freelance developers. Example: San Antonio Express-News."
+      - "Assumed role of network and security engineer, establishing office/colo infrastructure: intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics."
+  - company: Sooloos (Roonlabs)
+    location: New York, NY
+    title: Software Engineer (iOS/macOS)
+    start_date: "05/2010"
+    end_date: "04/2012"
+    app_store_url: https://apps.apple.com/us/app/sooloos/id348003289
+    media_urls:
+      - https://roonlabs.com
+    responsibilities:
+      - Linked existing C#/Mono audio decoders and playback functionality to native Core Audio, contributing significantly to the Novell MonoMac project for missing Cocoa frameworks.
+      - Developed native event and UI code for OS X for a cross-platform C#/OpenGL desktop application. Duties included native font rendering, window/menu management, mouse/keyboard events, native text entry, and process forking. Developed MonoMac patches and gained deep knowledge of NSApplication runloop, event handling, and OpenGL compositing.
+      - Developed an iOS app for two-way syncing and playback of Sooloos media libraries, interfacing with a cross-platform C toolkit for network communication and database management. Sole Objective-C coder and UI designer for this project.
+      - Overhauled the iPad remote control software, Core Control (formerly Sooloos), originally built in LUA with iPhone Wax. Involved extensive UI modifications, new layouts, expanded network protocol, and new functionality. Primarily LUA with performance-critical sections in Objective-C & C. Achieved 4.5+ star rating.
+  - company: Sense Networks, Inc.
+    location: New York, NY
+    title: Software Engineer (iOS/DevOps)
+    start_date: "03/2008"
+    end_date: "03/2010"
+    media_urls:
+      - https://techcrunch.com/2008/06/09/location-tracking-startup-sense-networks-emerges-from-stealth-to-answer-the-question-where-is-everybody/
+      - https://en.wikipedia.org/wiki/Sense_Networks
+      - https://venturebeat.com/business/cabsense-finds-available-taxis/
+    responsibilities:
+      - Designed and developed Citysense for iPhone pre-official SDK, leveraging API hacking expertise. Managed full codebase and design. Named on patents for contributions to backend data analysis systems. Featured on GigaOM & NY Times.
+      - Assumed role of network and security engineer, establishing office/colo infrastructure: intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics.
+      - As a software engineer, created utilities for managing large datasets and authored significant patches for GNUstep's PBXBuild tool (XCode to GNUstep Makefile conversion), becoming an official FSF/GNU project developer.
+      - Developed CabSense for iPhone, contributing to design and development with the Android team. Created pre-rendered assets and the Quartz 'Radar' view. Ensured secure server/client communication. Created reusable C/Cocoa libraries for third-party CabSense data interaction. Featured on VentureBeat, ZDNet, NY Times.
+  - company: People Security
+    location: New York, NY
+    title: Security Consultant (Contract)
+    start_date: "10/2007"
+    end_date: "12/2007"
+    responsibilities:
+      - Researched and developed training materials for an online "secure coding practices" school in direct partnership with Dr. Hugh Thompson.
+      - Covered topics such as avoiding "stack overflows," "nop sleds," "off-by-one" errors, other "buffer overflow" attacks, and advanced attacks against randomized stack/library addresses.
+  - company: AT&T Tech Channel
+    location: Bedminster, NJ
+    title: Associate Producer / Researcher
+    start_date: "08/2007"
+    end_date: "11/2007"
+    responsibilities:
+      - Researched and consulted on guests and topics for the AT&T Tech Channel. Managed bookings and discussion topics with prominent figures including Emanuel Goldstein (2600), Whit Diffie (RSA), Bill Cheswick (Firewalls), Jack Dorsey (Twitter), and H.D. Moore (Metasploit).
+      - Worked out of the main Bedminster, NJ, former Bell Labs research facility.
+
+personal_projects:
+  - name: Provenance
+    description: tvOS & iOS multi-platform emulator. Author and PM.
+    app_store_link: ""
+    links:
+      - title: Website
+        url: https://provenance-emu.com
+  - name: Hero Transitions
+    description: Maintained and contributed to Hero, a library for building custom view controller transitions in Swift.
+    app_store_link: ""
+    links:
+      - title: GitHub
+        url: https://github.com/HeroTransitions/Hero
+  - name: RxReachability
+    description: Took over maintenance for RxReachability, a RxSwift wrapper for Apple's Reachability framework.
+    app_store_link: ""
+    links:
+      - title: GitHub
+        url: https://github.com/RxSwiftCommunity/RxReachability/
+  - name: Bass Station 2 for Max/MSP
+    description: Developed a Max for Live device to control the Novation Bass Station II synthesizer.
+    app_store_link: ""
+    links:
+      - title: GitHub
+        url: https://github.com/JoeMatt/BassStationIIMaxForLive
+  - name: iPhreak
+    description: Created a native DTMF generator for the original iPhone (Objective-C/GPL) pre-SDK as part of early iPhone software hacking efforts.
+    app_store_link: ""
+    links:
+      - title: Google Code (Original - Inactive)
+        url: http://iphreak.googlecode.com
+  - name: Question of the Day
+    description: Contracted to add features to an existing iPhone application, "Question of the Day."
+    app_store_link: "https://apps.apple.com/us/app/qotd-question-of-the-day/id6472935809"
+    links:
+      - title: App Store Link
+        url: "https://apps.apple.com/us/app/qotd-question-of-the-day/id6472935809"
+  - name: MixMan DM2 USB/MIDI driver for OS X
+    description: (unofficial, reverse engineered protocol) Home, MacUpdate Reviews (C and C++ mix for driver. Obj-C and Quartz Composer for front-end)
+    app_store_link: ""
+    links:
+      - title: GitHub Releases
+        url: "https://github.com/JoeMatt/dm2usbmididriver/releases"
+  - name: OS X driver for Starr Labs USB Guitar
+    description: Developed an OS X USB driver for Starr Labs MIDI guitars (Objective-C & C).
+    app_store_link: ""
+    links:
+      - title: Starr Labs Support
+        url: https://www.starrlabs.com/support/
+      - title: Ztar Product Page
+        url: https://www.starrlabs.com/ztar-midi-guitar/
+  - name: OS X driver for Aurora Mixer
+    description: Created an OS X driver for the Aurora digital audio mixer (Objective-C & C), hosted on GitHub.
+    app_store_link: ""
+    links:
+      - title: GitHub Repository
+        url: https://github.com/joematt/aurora-mixer-drivers
+  - name: Pbxbuild
+    description: Submitted major patches to the Pbxbuild tool, enabling conversion of complex Xcode projects to Linux/Windows compatible GNU Makefiles for cross-platform compilation.
+    app_store_link: ""
+    links:
+      - title: Patch Discussion (Mailing List)
+        url: https://lists.gnu.org/archive/html/gnustep-dev/2009-11/msg00046.html
+
+open_source_contributions:
+  - name: UTM
+    description: Contributed a pull request to UTM, a popular virtual machine host for iOS and macOS.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://getutm.app/
+    - title: PR #3055
+      url: https://github.com/utmapp/UTM/pull/3055
+  - name: retroarch
+    description: Contributed multiple pull requests, including fixes and improvements.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://www.retroarch.com/
+    - title: PR #17590
+      url: https://github.com/libretro/RetroArch/pull/17590
+    - title: PR #17591
+      url: https://github.com/libretro/RetroArch/pull/17591
+    - title: PR #17569
+      url: https://github.com/libretro/RetroArch/pull/17569
+  - name: reicast
+    description: Contributed UIKit UI to reicast, a popular emulator for the Sega Dreamcast.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/skmp/reicast-emulator
+    - title: Flycast (Successor)
+      url: https://github.com/flyinghead/flycast
+  - name: RxRealm (RxSwiftCommunity)
+    description: Maintainer and contributor to RxRealm, providing RxSwift bindings for Realm Swift within the RxSwiftCommunity.
+    app_store_link: ""
+    links:
+    - title: Project Repository
+      url: https://github.com/RxSwiftCommunity/RxRealm
+  - name: XMLCoder
+    description: Contributed multiple significant pull requests to XMLCoder, a Swift library for encoding and decoding XML using Codable, including attributed intrinsic value coding and dynamic node encoding enhancements.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/MaxDesiatov/XMLCoder/
+    - title: PR #73 (Attributed Intrinsic Value Coding)
+      url: https://github.com/CoreOffice/XMLCoder/pull/73
+    - title: PR #70 (Dynamic Node Encoding & Fixes)
+      url: https://github.com/CoreOffice/XMLCoder/pull/70
+  - name: GLideN64
+    description: Contributed to GLideN64, an open-source graphics plugin for N64 emulators.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/gonetz/GLideN64
+  - name: SideJITServer
+    description: Contributed to SideJITServer, a project enabling JIT for sideloaded iOS applications, by improving documentation clarity (PR #150).
+    app_store_link: ""
+    links:
+    - title: Project Repository
+      url: https://github.com/nythepegasus/SideJITServer
+    - title: Pull Request #150
+      url: https://github.com/nythepegasus/SideJITServer/pull/150
+  - name: Mono
+    description: Authored C# wrappers by hand for CoreMIDI, CoreAudio, and other Apple Foundation frameworks for MonoMac (now part of Xamarin/MAUI), including key contributions merged via pull requests.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://www.mono-project.com/
+    - title: MonoMac PR #20 (CoreAudio, CoreMIDI)
+      url: https://github.com/mono/monomac/pull/20
+    - title: MonoMac PR #4 (AppKit, Foundation, etc.)
+      url: https://github.com/mono/monomac/pull/4
+  - name: MultiPatch
+    description: Submitted a pull request (PR #19) to MultiPatch, a versatile ROM patching tool, with proposed enhancements/fixes. (Pending Merge)
+    app_store_link: ""
+    links:
+    - title: Project Repository
+      url: https://github.com/Sappharad/MultiPatch
+    - title: PR #19
+      url: https://github.com/Sappharad/MultiPatch/pull/19
+  - name: OSSSpeechKit
+    description: Added Swift Package Manager (SwiftPM) support to OSSSpeechKit, enabling easier integration for iOS, tvOS, and macCatalyst projects (PR #34).
+    app_store_link: ""
+    links:
+    - title: Project Repository
+      url: https://github.com/AppDevGuy/OSSSpeechKit
+    - title: PR #34 (SwiftPM Support)
+      url: https://github.com/AppDevGuy/OSSSpeechKit/pull/34
+  - name: sReto
+    description: Contributed to sReto, a P2P framework for real-time collaboration in Swift.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/ls1intum/sReto
+  - name: UIForLumberjack
+    description: Contributed to UIForLumberjack, an iOS UI library for displaying CocoaLumberjack logs.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/burczyk/UIForLumberjack
+  - name: Play! Framework
+    description: Contributed a pull request to the Play! Framework, a high-velocity web framework for Java and Scala.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/jpd002/Play--Framework
+    - title: PR #44
+      url: https://github.com/jpd002/Play--Framework/pull/44
+  - name: EGYWebViewController
+    description: Contributed to EGYWebViewController, an in-app browser component for iOS.
+    app_store_link: ""
+    links:
+    - title: Project Link
+      url: https://github.com/iMokhles/EGYWebViewController
+  - name: virtualjaguar-libretro
+    description: Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned Virtual Jaguar project.
+    app_store_link: ""
+    links:
+      - title: Project Link
+        url: https://github.com/libretro/virtualjaguar-libretro
+  - name: PokeMini
+    description: Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR #17).
+    app_store_link: ""
+    links:
+      - title: Project Link
+        url: https://github.com/libretro/PokeMini
+      - title: PR #17 (Buffer Overflow Fix)
+        url: https://github.com/libretro/PokeMini/pull/17
+  - name: OBD2Connect
+    description: Added Swift Package Manager (SwiftPM) support, GitHub Actions validation, and addressed deprecations for OBD2Connect, a Swift library for OBD-II communication (PR #4).
+    app_store_link: ""
+    links:
+      - title: Project Repository
+        url: https://github.com/Wisors/OBD2Connect
+      - title: PR #4 (SwiftPM Support & Enhancements)
+        url: https://github.com/Wisors/OBD2Connect/pull/4
+  - name: PINCache.Swift (Fork)
+    description: Maintained a fork of PINCache.Swift, a fast, non-deadlocking parallel object cache for iOS, tvOS and macOS.
+    app_store_link: ""
+    links:
+      - title: GitHub Repository
+        url: https://github.com/JoeMatt/PINCache.Swift
+
+skills:
+  programming_languages:
+    - name: Swift
+      rating: 5
+    - name: Objective-C
+      rating: 5
+    - name: C++
+      rating: 4
+    - name: C
+      rating: 4
+    - name: JavaScript
+      rating: 4
+    - name: Python
+      rating: 3
+    - name: C#
+      rating: 3
+    - name: Ruby
+      rating: 3
+    - name: LUA
+      rating: 3
+
+  sdks_apis:
+    - name: iOS/tvOS SDK
+      rating: 5
+    - name: UIKit
+      rating: 5
+    - name: SwiftUI
+      rating: 5
+    - name: AppKit
+      rating: 4
+    - name: AVFoundation
+      rating: 4
+    - name: Core Audio
+      rating: 5
+    - name: Core MIDI
+      rating: 5
+    - name: Core Location / MapKit
+      rating: 4
+    - name: Core Animation
+      rating: 4
+    - name: Metal
+      rating: 3
+    - name: OpenGL/ES
+      rating: 3
+    - name: StoreKit
+      rating: 4
+    - name: XCTest
+      rating: 5
+    - name: Combine
+      rating: 4
+    - name: RxSwift
+      rating: 4
+    - name: React Native
+      rating: 3
+    - name: Realm
+      rating: 5
+    - name: Max/MSP
+      rating: 3
+
+education:
+  - institution: University at Buffalo
+    degree: BS, Computer Science
+    date: 2004 - 2008

@@ -16,6 +16,7 @@ wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/
 
 Requirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.
 
+
 # Joseph Mattiello
 
 ## 📬 Contact Information

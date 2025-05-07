@@ -5,81 +5,122 @@ import Foundation
 import Cncurses
 import Darwin // For setlocale, LC_ALL
 
+// Ncurses attributes not directly imported as Swift constants due to C macro definitions
+// A_BOLD is typically (1U << (13 + 8)) = 1U << 21 = 2097152
+let A_BOLD: Int32 = 0x200000 // Or 2097152
+// You might need to define other A_* attributes (A_NORMAL, A_REVERSE, etc.) if used
+// let A_NORMAL: Int32 = 0 
+
+// Function to initialize color pairs
+func initPairs() {
+    // Pair 1: Header/Footer text on blue background (or other distinctive scheme)
+    init_pair(1, Int16(COLOR_WHITE), Int16(COLOR_BLUE))
+    // Pair 2: Selected tab (black text on white background for high contrast)
+    init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_WHITE))
+    // Pair 3: Unselected tab / Default content text (white text on black background)
+    init_pair(3, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
+    // Pair 4: Section headers like "TECHNICAL SKILLS" (e.g., yellow on black for emphasis)
+    init_pair(4, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))
+    // Pair 5: Job titles or other important highlights (e.g., green on black)
+    init_pair(5, Int16(COLOR_GREEN), Int16(COLOR_BLACK))
+    // Pair 6: List items, skill names, or secondary info (e.g., cyan on black)
+    init_pair(6, Int16(COLOR_CYAN), Int16(COLOR_BLACK))
+    // Pair 7: For skill bars (example: white on a slightly darker shade, or just bolded default)
+    // init_pair(7, Int16(COLOR_WHITE), Int16(COLOR_DARKGRAY)) // COLOR_DARKGRAY might not be standard
+    // Or simply use A_BOLD with default colors for skill bars if Pair 3 is black background.
+}
+
 // Main entry point for the application
 func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later parts of the function might still use it
-    // Ncurses attributes not directly imported as Swift constants due to C macro definitions
-    // A_BOLD is typically (1U << (13 + 8)) = 1U << 21 = 2097152
-    let A_BOLD: Int32 = 0x200000 // Or 2097152
-    // You might need to define other A_* attributes (A_NORMAL, A_REVERSE, etc.) if used
-    // let A_NORMAL: Int32 = 0 
+    // Set locale for UTF-8 character support, crucial for ncursesw
+    // This should be one of the first things called in a ncurses application.
+    _ = setlocale(LC_ALL, "")
 
     // Helper function to convert Swift String to null-terminated wchar_t array
     func swiftStringToWcharTArray(_ str: String) -> [wchar_t] {
         return str.unicodeScalars.map { wchar_t($0.value) } + [0] // Null-terminate
     }
 
-    guard let mainScreen = initscr() else {
-        // Or throw a custom error if the function signature remains 'throws'
+    // Global window variables
+    var mainScreen: OpaquePointer? // Changed from OpaquePointer!
+    var headerWin: OpaquePointer?
+    var contentWin: OpaquePointer?
+    var footerWin: OpaquePointer?
+
+    guard let screen = initscr() else {
         print("Error: Could not initialize ncurses screen (initscr failed).")
         return
     }
-    defer { endwin() } // Ensures ncurses environment is closed properly
+    mainScreen = screen // Assign to global
+    defer { endwin() } // Ensures ncurses environment is closed properly on exit from this scope
 
-    // Set locale for UTF-8 character support, crucial for ncursesw
-    _ = setlocale(LC_ALL, "")
-
-    if !has_colors() {
-        // endwin() is handled by defer
-        print("Error: Terminal does not support colors.")
-        // Or throw a custom error
+    // The guard above ensures screen is not nil, so mainScreen is not nil here.
+    // The following explicit nil check for mainScreen is technically redundant but harmless.
+    guard mainScreen != nil else {
+        endwin() // Clean up ncurses
+        print("Error: mainScreen is nil after initscr() and assignment.")
         return
     }
-    start_color()        // Enable color manipulation
-    noecho()             // Don't echo user key presses
-    cbreak()             // Disable line buffering, characters are immediately available
-    keypad(mainScreen, true) // Enable function keys (F1, arrow keys, etc.) for the main screen
-    // timeout(0)           // Set non-blocking input mode (getch() returns ERR if no input immediately)
 
-    // Get screen dimensions
-    var maxY: Int32 = 0 // ncurses functions use Int32 for coordinates and dimensions
-    var maxX: Int32 = 0
-    maxY = getmaxy(mainScreen) // Get Y dimension
-    maxX = getmaxx(mainScreen) // Get X dimension
+    start_color()
+    use_default_colors() // Use terminal's default background, allows transparency
+    initPairs()          // Initialize color pairs
 
-    // Define color pairs using C ncurses API
-    // init_pair(pair_number, foreground_color_id, background_color_id)
-    // COLOR_* constants are typically short, which is Int16 in Swift when imported from C
-    init_pair(1, Int16(COLOR_WHITE), Int16(COLOR_BLUE))    // Header
-    init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_WHITE))   // Selected tab
-    init_pair(3, Int16(COLOR_WHITE), Int16(COLOR_BLACK))   // Unselected tab
-    init_pair(4, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))  // Highlights
-    init_pair(5, Int16(COLOR_GREEN), Int16(COLOR_BLACK))   // Success/positive
-    init_pair(6, Int16(COLOR_CYAN), Int16(COLOR_BLACK))    // Info
+    noecho()             // Don't echo typed characters
+    cbreak()             // Disable line buffering, make chars available immediately
+    keypad(mainScreen!, true) // Enable function keys (arrows, F1, etc.) - mainScreen! is safe here
+    curs_set(0)          // Hide the cursor
 
-    // Create tabs for different sections
-    let tabs = [
-        "Overview",
-        "Experience",
-        "Skills",
-        "Projects",
-        "Open Source"
-    ]
+    // Display boot screen first
+    displayBootScreen(window: mainScreen) // mainScreen is OpaquePointer?, which matches func signature
 
-    // Window variables (ncurses C API: WINDOW* is represented as OpaquePointer in Swift)
-    // Standard ncurses windows are created with newwin(nlines, ncols, begin_y, begin_x)
-    let headerWin: OpaquePointer? = newwin(3, maxX, 0, 0)
+    // Setup windows after boot screen
+    let appMaxY = getmaxy(mainScreen!) // Total available height for stdscr
+    let appMaxX = getmaxx(mainScreen!) // Total available width for stdscr
 
-    let contentWin: OpaquePointer? = newwin(maxY - 4, maxX, 3, 0)
-    if let win = contentWin { 
+    // Define tabs for different sections
+    let tabs = ["Overview", "Experience", "Skills", "Projects", "Open Source"]
+
+    // Calculate effective usable area *inside* the main border
+    let innerY: Int32 = 1             // Start 1 line down
+    let innerX: Int32 = 1             // Start 1 column in
+    let innerHeight = appMaxY > 2 ? appMaxY - 2 : 1 // Subtract 2 for top/bottom border lines, ensure at least 1
+    let innerWidth = appMaxX > 2 ? appMaxX - 2 : 1   // Subtract 2 for left/right border lines, ensure at least 1
+
+    // Calculate window dimensions for header, content, footer to fit *inside* the border
+    let headerHeight: Int32 = 3
+    // Ensure headerHeight doesn't exceed innerHeight
+    let actualHeaderHeight = min(headerHeight, innerHeight)
+    headerWin = newwin(actualHeaderHeight, innerWidth, innerY, innerX)
+
+    let footerHeight: Int32 = 1
+    // Ensure footerHeight doesn't exceed what's left of innerHeight
+    let actualFooterHeight = min(footerHeight, innerHeight - actualHeaderHeight > 0 ? innerHeight - actualHeaderHeight : 0)
+    
+    // Content window takes the remaining space
+    // Ensure contentHeight is not negative
+    let potentialContentHeight = innerHeight - actualHeaderHeight - actualFooterHeight
+    let actualContentHeight = potentialContentHeight > 0 ? potentialContentHeight : 0
+    
+    contentWin = newwin(actualContentHeight, innerWidth, innerY + actualHeaderHeight, innerX)
+    if let win = contentWin {
         scrollok(win, true) // Enable scrolling for contentWin
-        box(win, 0, 0)      // Draw a box around contentWin using default ACS characters
+        // Explicitly set the background for contentWin to ensure it fills correctly
+        // COLOR_PAIR(3) is typically White_Text on Black_Background, so background is Black.
+        wbkgd(win, chtype(COLOR_PAIR(3)))
     }
 
-    let footerWin: OpaquePointer? = newwin(1, maxX, maxY - 1, 0)
-        
-    // Ensure windows are not nil
+    footerWin = newwin(actualFooterHeight, innerWidth, innerY + actualHeaderHeight + actualContentHeight, innerX)
+
+    // Ensure windows are not nil (especially important if innerHeight/Width were too small)
     guard headerWin != nil, contentWin != nil, footerWin != nil else {
-        print("Error: Could not initialize windows.")
+        print("Error: Could not initialize windows. Screen might be too small.")
+        return
+    }
+    guard actualHeaderHeight > 0, actualContentHeight >= 0, actualFooterHeight > 0 else {
+        // This check is a bit redundant if newwin handles zero dimensions gracefully by returning nil,
+        // but good for explicit safety if screen is extremely small.
+        print("Error: Calculated window dimensions are invalid (too small). Screen might be too small.")
         return
     }
 
@@ -117,11 +158,16 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     func drawFooter() {
         guard let footerWin = footerWin else { return }
         wclear(footerWin)
+        let footerText = "TAB: Switch | ↑↓: Scroll | Q: Quit"
+        // Center text within footerWin itself
+        let footerWinMaxX = getmaxx(footerWin) // Get the actual width of footerWin
+        let textX = (footerWinMaxX - Int32(footerText.count)) / 2
+        
         wattron(footerWin, COLOR_PAIR(1))
-        wmove(footerWin, 0, (maxX - Int32("TAB: Switch tabs | UP/DOWN: Scroll | Q: Quit".count)) / 2)
-        waddstr(footerWin, swiftStringToWcharTArray("TAB: Switch tabs | UP/DOWN: Scroll | Q: Quit"))
+        // Ensure textX is not negative if footerText is too long for the window
+        mvwaddwstr(footerWin, 0, max(0, textX), swiftStringToWcharTArray(footerText))
         wattroff(footerWin, COLOR_PAIR(1))
-        wrefresh(footerWin)
+        // No wrefresh(footerWin) here, refreshAll handles it with doupdate
     }
     
     // Function to display content based on current tab
@@ -195,6 +241,11 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     
     // Function to refresh all windows
     func refreshAll() {
+        // Global border for the entire screen
+        if let screen = mainScreen { // Ensure mainScreen is not nil
+            box(screen, 0, 0)
+        }
+
         if let win = headerWin { wclear(win) }
         if let win = contentWin { 
             wclear(win) 
@@ -206,13 +257,76 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         displayContent()
         drawFooter()
 
-        wnoutrefresh(mainScreen) // Prepare stdscr for refresh (if it has its own direct drawing beyond sub-windows)
+        wnoutrefresh(mainScreen!) // Prepare stdscr for refresh (if it has its own direct drawing beyond sub-windows)
         if let win = headerWin { wnoutrefresh(win) }
         if let win = contentWin { wnoutrefresh(win) }
         if let win = footerWin { wnoutrefresh(win) }
         doupdate() // Perform actual refresh of all prepared windows simultaneously
     }
     
+    // Boot screen function
+    func displayBootScreen(window: OpaquePointer?) {
+        guard let screen = window else { return }
+
+        let maxY = getmaxy(screen)
+        let maxX = getmaxx(screen)
+
+        wclear(screen) // Clear the screen for the boot display
+        
+        // "L33t" style name
+        let nameArt = [
+            "   J0$3Ph M47713LL0'S R3$UM3   "
+        ]
+
+        // Calculate starting Y position to center the art vertically
+        let artHeight = Int32(nameArt.count)
+        let textStartY = (maxY - artHeight - 5) / 2 // -5 for the box below
+
+        // Display ASCII art name
+        wattron(screen, A_BOLD)
+        for (i, line) in nameArt.enumerated() {
+            let lineY = textStartY + Int32(i)
+            let lineX = (maxX - Int32(line.count)) / 2
+            mvwaddwstr(screen, lineY, lineX, swiftStringToWcharTArray(line))
+        }
+        wattroff(screen, A_BOLD)
+
+        // "Press any key to continue" box
+        let prompt = " Press any key to continue... "
+        let promptWidth = Int32(prompt.count)
+        let boxHeight: Int32 = 3 // For a box with 1 line of text inside
+        let boxWidth = promptWidth + 2 // +2 for side borders of the box() function
+
+        let boxY = textStartY + artHeight + 2 // 2 lines below the art
+        let boxX = (maxX - boxWidth) / 2
+
+        // Create a new window for the prompt box
+        let promptWin = newwin(boxHeight, boxWidth, boxY, boxX)
+        guard let promptWin = promptWin else {
+            // Fallback if window creation fails, though unlikely here
+            mvwaddwstr(screen, boxY + 1, boxX + 1, swiftStringToWcharTArray(prompt))
+            wrefresh(screen)
+            getch()
+            return
+        }
+
+        box(promptWin, 0, 0) // Draw a box around the new window
+        mvwaddwstr(promptWin, 1, 1, swiftStringToWcharTArray(prompt)) // Text inside the box (y=1, x=1 relative to promptWin)
+        
+        wrefresh(promptWin) // Refresh the prompt window to display it
+        // wrefresh(screen) // Refresh the main screen if there were other changes (not strictly needed here as promptWin is on top)
+
+        getch()          // Wait for key press
+
+        delwin(promptWin) // Delete the prompt window after use
+        // Need to touch and refresh the area on stdscr that was covered by promptWin
+        // or clear and refresh the whole screen if we want to ensure no artifacts.
+        // For simplicity now, a full refresh of the main screen will happen when the main UI loads.
+    }
+
+    // Display boot screen first
+    displayBootScreen(window: mainScreen)
+
     // Initial display
     refreshAll()
 

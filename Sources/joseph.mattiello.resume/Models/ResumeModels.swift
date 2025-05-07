@@ -96,9 +96,35 @@ struct Skills: Codable {
 
 /// Individual skill with rating
 struct Skill: Codable, Identifiable {
-    var id = UUID()
+    let id: UUID // Keep as let for Identifiable, will be set in init
     let name: String
     let rating: Int
+
+    // Define CodingKeys to only include properties from YAML
+    enum CodingKeys: String, CodingKey {
+        case name
+        case rating
+        // 'id' is omitted, so it won't be looked for in YAML during decoding
+    }
+
+    // Custom initializer for creating Skill instances programmatically
+    // Allows providing an id or letting it default to a new UUID
+    init(id: UUID = UUID(), name: String, rating: Int) {
+        self.id = id
+        self.name = name
+        self.rating = rating
+    }
+
+    // Custom Decodable initializer
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.rating = try container.decode(Int.self, forKey: .rating)
+        self.id = UUID() // Always generate a new UUID when decoding from YAML
+    }
+    
+    // If encoding is needed and 'id' should be included, a custom encode(to:) would be required.
+    // For now, focusing on successful decoding.
 }
 
 /// Education information

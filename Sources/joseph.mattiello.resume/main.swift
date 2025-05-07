@@ -1,720 +1,697 @@
-// Joseph Mattiello Resume CLI Application
-// A terminal-based resume viewer using Cncurses (raw C ncurses)
-
 import Foundation
 import Cncurses
+import Yams
 import Darwin // For setlocale, LC_ALL
 
-// Ncurses attributes not directly imported as Swift constants due to C macro definitions
-// A_BOLD is typically (1U << (13 + 8)) = 1U << 21 = 2097152
-let A_BOLD: Int32 = 0x200000 // Or 2097152
-// You might need to define other A_* attributes (A_NORMAL, A_REVERSE, etc.) if used
-// let A_NORMAL: Int32 = 0
+@MainActor
+struct ResumeTUI {
+    // MARK: - Nested TUIState
+    @MainActor
+    class TUIState {
+        var screen: OpaquePointer?
+        var headerWin: OpaquePointer?
+        var contentWin: OpaquePointer?
+        var footerWin: OpaquePointer?
+        var currentTabIndex = 0
+        var scrollPosition = 0
+        var resume: Resume! // Make sure Resume struct is accessible from here
+        var lastError: String?
+        var debugLog: [String] = [] // Added for debug logging
 
-// Function to initialize color pairs
-func initPairs() {
-    // Pair 1: Header/Footer text on blue background (or other distinctive scheme)
-    init_pair(1, Int16(COLOR_WHITE), Int16(COLOR_BLUE))
-    // Pair 2: Selected tab (black text on white background for high contrast)
-    init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_WHITE))
-    // Pair 3: Unselected tab / Default content text (white text on black background)
-    init_pair(3, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
-    // Pair 4: Section headers in content (e.g., yellow or cyan on black)
-    init_pair(4, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))
-    // Pair 5: Green on black for hacker boot screen trail
-    init_pair(5, Int16(COLOR_GREEN), Int16(COLOR_BLACK))
-    // Pair 6: List items, skill names, or secondary info (e.g., cyan on black)
-    init_pair(6, Int16(COLOR_CYAN), Int16(COLOR_BLACK))
-    // Pair 7: White on black for Matrix rain head
-    init_pair(7, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
-}
-
-// Main entry point for the application
-func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later parts of the function might still use it
-    // Set locale for UTF-8 character support, crucial for ncursesw
-    // This should be one of the first things called in a ncurses application.
-    _ = setlocale(LC_ALL, "")
-
-    // Helper function to convert Swift String to null-terminated wchar_t array
-    func swiftStringToWcharTArray(_ str: String) -> [wchar_t] {
-        return str.unicodeScalars.map { wchar_t($0.value) } + [0] // Null-terminate
+        func appendToDebugLog(_ message: String) {
+            debugLog.append(message)
+        }
     }
 
-    // Global window variables
-    var mainScreen: OpaquePointer? // Changed from OpaquePointer!
-    var headerWin: OpaquePointer?
-    var contentWin: OpaquePointer?
-    var footerWin: OpaquePointer?
+    // MARK: - Ncurses Constants & Helpers
+    static let A_BOLD: Int32 = 0x00200000
+    static let A_UNDERLINE: Int32 = 0x00000040
 
-    guard let screen = initscr() else {
-        print("Error: Could not initialize ncurses screen (initscr failed).")
-        return
-    }
-    mainScreen = screen // Assign to global
-    defer { endwin() } // Ensures ncurses environment is closed properly on exit from this scope
+    // MARK: - TUI State (Static Properties)
+    @MainActor static var tuiState = TUIState()
+    static let TAB_NAMES = ["Overview", "Experience", "Skills", "Projects", "Contributions"]
 
-    // The guard above ensures screen is not nil, so mainScreen is not nil here.
-    // The following explicit nil check for mainScreen is technically redundant but harmless.
-    guard mainScreen != nil else {
-        endwin() // Clean up ncurses
-        print("Error: mainScreen is nil after initscr() and assignment.")
-        return
-    }
+    // MARK: - Helper Functions (Static Methods)
+    static func wrapText(_ text: String, indent: Int = 0, width: Int) -> String {
+        guard width > 0 else { return text }
+        let indentString = String(repeating: " ", count: indent)
+        var wrappedText = ""
+        let lines = text.components(separatedBy: "\n")
 
-    start_color()
-    use_default_colors() // Use terminal's default background, allows transparency
-    initPairs()          // Initialize color pairs
+        for line in lines {
+            if line.isEmpty {
+                wrappedText += indentString + "\n"
+                continue
+            }
+            var currentLine = indentString
+            let words = line.split(separator: " ")
 
-    noecho()             // Don't echo typed characters
-    cbreak()             // Disable line buffering, make chars available immediately
-    keypad(mainScreen!, true) // Enable function keys (arrows, F1, etc.) - mainScreen! is safe here
-    curs_set(0)          // Hide the cursor
-
-    // Display boot screen first
-    displayBootScreen(window: mainScreen) // mainScreen is OpaquePointer?, which matches func signature
-
-    // Setup windows after boot screen
-    let appMaxY = getmaxy(mainScreen!) // Total available height for stdscr
-    let appMaxX = getmaxx(mainScreen!) // Total available width for stdscr
-
-    // Define tabs for different sections
-    let tabs = ["Overview", "Experience", "Skills", "Projects", "Open Source"]
-
-    // Calculate effective usable area *inside* the main border
-    let innerY: Int32 = 1             // Start 1 line down
-    let innerX: Int32 = 1             // Start 1 column in
-    let innerHeight = appMaxY > 2 ? appMaxY - 2 : 1 // Subtract 2 for top/bottom border lines, ensure at least 1
-    let innerWidth = appMaxX > 2 ? appMaxX - 2 : 1   // Subtract 2 for left/right border lines, ensure at least 1
-
-    // Calculate window dimensions for header, content, footer to fit *inside* the border
-    let headerHeight: Int32 = 3
-    // Ensure headerHeight doesn't exceed innerHeight
-    let actualHeaderHeight = min(headerHeight, innerHeight)
-    headerWin = newwin(actualHeaderHeight, innerWidth, innerY, innerX)
-
-    let footerHeight: Int32 = 1
-    // Ensure footerHeight doesn't exceed what's left of innerHeight
-    let actualFooterHeight = min(footerHeight, innerHeight - actualHeaderHeight > 0 ? innerHeight - actualHeaderHeight : 0)
-
-    // Content window takes the remaining space
-    // Ensure contentHeight is not negative
-    let potentialContentHeight = innerHeight - actualHeaderHeight - actualFooterHeight
-    let actualContentHeight = potentialContentHeight > 0 ? potentialContentHeight : 0
-
-    contentWin = newwin(actualContentHeight, innerWidth, innerY + actualHeaderHeight, innerX)
-    if let win = contentWin {
-        scrollok(win, true) // Enable scrolling for contentWin
-        // Explicitly set the background for contentWin to ensure it fills correctly
-        // COLOR_PAIR(3) is typically White_Text on Black_Background, so background is Black.
-        wbkgd(win, chtype(COLOR_PAIR(3)))
+            for word in words {
+                if currentLine.count + word.count + 1 > width && currentLine != indentString { // +1 for space
+                    wrappedText += currentLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+                    currentLine = indentString
+                }
+                currentLine += word + " "
+            }
+            wrappedText += currentLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+        }
+        if wrappedText.hasSuffix("\n") {
+            wrappedText = String(wrappedText.dropLast())
+        }
+        return wrappedText
     }
 
-    footerWin = newwin(actualFooterHeight, innerWidth, innerY + actualHeaderHeight + actualContentHeight, innerX)
+    static func drawProgressBar(current: Int, maxVal: Int, width: Int) -> String {
+        guard width > 2 else { return "[]" }
+        let actualWidth = width - 2 // Account for '[' and ']'
+        let progress = min(max(0, current), maxVal) // Clamp progress to be within 0 and maxVal
+        let filledCount = Int(round(Double(progress) / Double(maxVal) * Double(actualWidth)))
+        let emptyCount = actualWidth - filledCount
 
-    // Ensure windows are not nil (especially important if innerHeight/Width were too small)
-    guard headerWin != nil, contentWin != nil, footerWin != nil else {
-        print("Error: Could not initialize windows. Screen might be too small.")
-        return
+        let filledChars = String(repeating: "█", count: filledCount)
+        let emptyChars = String(repeating: "░", count: emptyCount)
+
+        return "[" + filledChars + emptyChars + "]"
     }
-    guard actualHeaderHeight > 0, actualContentHeight >= 0, actualFooterHeight > 0 else {
-        // This check is a bit redundant if newwin handles zero dimensions gracefully by returning nil,
-        // but good for explicit safety if screen is extremely small.
-        print("Error: Calculated window dimensions are invalid (too small). Screen might be too small.")
-        return
+
+    // MARK: - YAML Parsing (Static Methods)
+    static func baseYAMLtoJSON(_ yamlString: String) -> [String: Any] {
+        var dict = [String: Any]()
+        let lines = yamlString.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            if trimmedLine.isEmpty || trimmedLine.starts(with: "#") { continue }
+
+            let parts = trimmedLine.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            if parts.count == 2 {
+                let key = parts[0]
+                let value = parts[1]
+                if let intValue = Int(value) {
+                    dict[key] = intValue
+                } else if let doubleValue = Double(value) {
+                    dict[key] = doubleValue
+                } else if value.lowercased() == "true" || value.lowercased() == "false" {
+                    dict[key] = Bool(value.lowercased())
+                } else if value.starts(with: "[") && value.hasSuffix("]") && !value.contains("{") {
+                     let arrayContent = value.dropFirst().dropLast()
+                        .components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "'", with: "").replacingOccurrences(of: "\"", with: "") }
+                     dict[key] = arrayContent
+                } else {
+                    dict[key] = value
+                }
+            }
+        }
+        return dict
     }
 
-    // Track current tab and scroll position
-    var currentTabIndex = 0
-    var scrollPosition = 0
+    static func parseResume(from yamlString: String) throws -> Resume {
+        let jsonCompatibleDict = baseYAMLtoJSON(yamlString)
+        let jsonData = try JSONSerialization.data(withJSONObject: jsonCompatibleDict, options: [])
+        let decoder = JSONDecoder()
+        return try decoder.decode(Resume.self, from: jsonData)
+    }
 
-    // Function to draw the header with tabs
-    func drawHeader() {
-        guard let headerWin = headerWin else { return }
-        wclear(headerWin)
-        wattron(headerWin, COLOR_PAIR(1) | A_BOLD) // Set attributes for the window
+    // MARK: - Resume Data Handling
+    @MainActor
+    static func loadResumeData() -> Resume? {
+        let fileName = "resume"
+        let fileExtension = "yaml"
+        let resourcesSubDir = "Resources"
 
-        mvwaddwstr(headerWin, 0, 0, swiftStringToWcharTArray("Joseph Mattiello's Resume"))
-        wattroff(headerWin, COLOR_PAIR(1) | A_BOLD)
+        var urlsToTry: [URL?] = []
 
-        // Draw tabs
-        var xPos: Int32 = 0
-        for (index, tab) in tabs.enumerated() {
-            let tabWidth = Int32(tab.count + 4)
-            let selected = index == currentTabIndex
-            let colorPairID = Int32(selected ? 2 : 3)
+        // 1. Primary Bundle location (inside Resources subdirectory)
+        urlsToTry.append(Bundle.main.url(forResource: fileName, withExtension: fileExtension, subdirectory: resourcesSubDir))
 
-            wattron(headerWin, COLOR_PAIR(colorPairID))
-            mvwaddwstr(headerWin, 2, xPos, swiftStringToWcharTArray(" \(tab) "))
-            wattroff(headerWin, COLOR_PAIR(colorPairID))
+        // 2. Bundle root
+        urlsToTry.append(Bundle.main.url(forResource: fileName, withExtension: fileExtension))
 
-            xPos += tabWidth
+        // 3. & 4. Next to the executable
+        if let executableURL = Bundle.main.executableURL?.deletingLastPathComponent() {
+            urlsToTry.append(executableURL.appendingPathComponent(resourcesSubDir).appendingPathComponent("\(fileName).\(fileExtension)"))
+            urlsToTry.append(executableURL.appendingPathComponent("\(fileName).\(fileExtension)"))
         }
 
-        wrefresh(headerWin)
+        // 5. & 6. Current Working Directory (PWD)
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        urlsToTry.append(currentDirectoryURL.appendingPathComponent(resourcesSubDir).appendingPathComponent("\(fileName).\(fileExtension)"))
+        urlsToTry.append(currentDirectoryURL.appendingPathComponent("\(fileName).\(fileExtension)"))
+
+        for urlOptional in urlsToTry {
+            guard let url = urlOptional else { continue }
+            
+            // Check if file exists at this URL before attempting to load
+            if FileManager.default.fileExists(atPath: url.path) {
+                tuiState.appendToDebugLog("Attempting to load resume from: \(url.path)")
+                do {
+                    let yamlString = try String(contentsOf: url)
+                    let decoder = YAMLDecoder()
+                    let resume = try decoder.decode(Resume.self, from: yamlString)
+                    tuiState.appendToDebugLog("Successfully loaded and parsed resume.yaml from \(url.path)")
+                    return resume
+                } catch {
+                    tuiState.appendToDebugLog("Error loading or parsing resume.yaml from \(url.path): \(error)")
+                    // Continue to next URL if this one fails
+                }
+            }
+        }
+
+        tuiState.lastError = "Error: \(fileName).\(fileExtension) not found in expected locations or failed to parse."
+        tuiState.appendToDebugLog(tuiState.lastError ?? "Unknown error in loadResumeData after trying all paths.")
+        return nil
     }
 
-    // Function to draw the footer
-    func drawFooter() {
-        guard let footerWin = footerWin else { return }
-        wclear(footerWin)
-        let footerText = "TAB: Switch | ↑↓: Scroll | Q: Quit"
-        // Center text within footerWin itself
-        let footerWinMaxX = getmaxx(footerWin) // Get the actual width of footerWin
-        let textX = (footerWinMaxX - Int32(footerText.count)) / 2
+    // MARK: - Content Formatting (Static Methods)
+    @MainActor
+    static func formatOverviewTab(resume: Resume) -> [(String, Int32)] {
+        var attributedContent: [(String, Int32)] = []
+        guard let cw = tuiState.contentWin else { return [] }
+        let contentWidth = Int(getmaxx(cw) - 6)
 
-        wattron(footerWin, COLOR_PAIR(1))
-        // Ensure textX is not negative if footerText is too long for the window
-        mvwaddwstr(footerWin, 0, max(0, textX), swiftStringToWcharTArray(footerText))
-        wattroff(footerWin, COLOR_PAIR(1))
-        // No wrefresh(footerWin) here, refreshAll handles it with doupdate
+        attributedContent.append(("\n  \(resume.name)\n\n", ResumeTUI.A_BOLD))
+
+        attributedContent.append(("  CONTACT INFORMATION\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
+        if let email = resume.contact.email {
+            attributedContent.append(("  Email: ", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append(("\(email)\n", Cncurses.COLOR_PAIR(4)))
+        }
+        if let phone = resume.contact.phone {
+            attributedContent.append(("  Phone: \(phone)\n", Cncurses.COLOR_PAIR(3)))
+        }
+        if let website = resume.contact.website {
+            attributedContent.append(("  Website: ", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append(("\(website)\n", Cncurses.COLOR_PAIR(4)))
+        }
+        if let linkedin = resume.contact.linkedin {
+            attributedContent.append(("  LinkedIn: ", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append(("https://linkedin.com/in/\(linkedin)\n", Cncurses.COLOR_PAIR(4)))
+        }
+        if let github = resume.contact.github {
+            attributedContent.append(("  GitHub: ", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append(("https://github.com/\(github)\n", Cncurses.COLOR_PAIR(4)))
+        }
+        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
+
+        // Profile/Summary
+        attributedContent.append(("  PROFESSIONAL SUMMARY\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        attributedContent.append((wrapText(resume.profile, indent: 2, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
+
+        // Education
+        attributedContent.append(("  EDUCATION\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        for edu in resume.education {
+            attributedContent.append(("  \(edu.degree)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+            attributedContent.append(("    \(edu.institution)\n", Cncurses.COLOR_PAIR(3))) // Removed edu.location
+            attributedContent.append(("    \(edu.graduationYear ?? "N/A")\n\n", Cncurses.COLOR_PAIR(3)))
+        }
+
+        // Skills Section (Summary - Top 5 Programming Languages and SDKs/APIs)
+        attributedContent.append(("\n  KEY SKILLS SUMMARY\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        // Top 5 Programming Languages (example, adjust as needed)
+        attributedContent.append(("    Top Programming Languages:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(4)))
+        let sortedLanguages = resume.skills.programmingLanguages.sorted { $0.rating > $1.rating }.prefix(5)
+
+        for language in sortedLanguages {
+            let progressBar = drawProgressBar(current: language.rating, maxVal: 5, width: 20)
+            attributedContent.append(("    \(language.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
+            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
+            attributedContent.append(("\(String(repeating: "★", count: language.rating))\(String(repeating: "☆", count: 5 - language.rating))\n", Cncurses.COLOR_PAIR(5)))
+        }
+
+        // Top 5 SDKs/APIs (example, adjust as needed)
+        attributedContent.append(("\n    Top SDKs/APIs:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(4)))
+        let sortedSDKs = resume.skills.sdksApis.sorted { $0.rating > $1.rating }.prefix(5)
+
+        for (_, sdk) in sortedSDKs.enumerated() { // Replaced index with _
+            let progressBar = drawProgressBar(current: sdk.rating, maxVal: 5, width: 20)
+            attributedContent.append(("    \(sdk.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
+            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
+            attributedContent.append(("\(String(repeating: "★", count: sdk.rating))\(String(repeating: "☆", count: 5 - sdk.rating))\n", Cncurses.COLOR_PAIR(5)))
+        }
+        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
+
+        return attributedContent
+    }
+
+    @MainActor
+    static func formatExperienceTab(resume: Resume) -> [(String, Int32)] {
+        var attributedContent: [(String, Int32)] = []
+        guard let cw = tuiState.contentWin else { return [] }
+        let contentWidth = Int(getmaxx(cw) - 10) // dynamically get width, less more padding for items
+
+        attributedContent.append(("\n  WORK EXPERIENCE\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        for job in resume.experience {
+            attributedContent.append(("  \(job.title) at \(job.company)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+            let period = "\(job.startDate) - \(job.endDate ?? "Present")"
+            attributedContent.append(("    \(period) | \(job.location)\n", Cncurses.COLOR_PAIR(3))) // Removed ?? "" as job.location is not optional
+            // if !job.description.isEmpty { // 'description' field doesn't exist in Experience model
+            //     attributedContent.append(("    \(wrapText(job.description, indent: 4, width: contentWidth))\n", Cncurses.COLOR_PAIR(3)))
+            // }
+            if !job.responsibilities.isEmpty {
+                attributedContent.append(("    Key Responsibilities:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+                for resp in job.responsibilities {
+                    attributedContent.append((wrapText("- " + resp, indent: 6, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
+                }
+                attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Space after responsibilities
+            }
+
+            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        }
+
+        return attributedContent
+    }
+
+    @MainActor
+    static func formatSkillsTab(resume: Resume) -> [(String, Int32)] {
+        var attributedContent: [(String, Int32)] = []
+        // guard let cw = tuiState.contentWin else { return [] } // Not using contentWidth directly here but good practice if it were
+        // let contentWidth = Int(getmaxx(cw) - 6)
+
+        attributedContent.append(("\n  TECHNICAL SKILLS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        // Programming Languages section
+        attributedContent.append(("  PROGRAMMING LANGUAGES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3))) // Minor separator
+
+        let sortedLanguages = resume.skills.programmingLanguages
+            .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
+
+        for language in sortedLanguages {
+            let progressBar = drawProgressBar(current: language.rating, maxVal: 5, width: 20)
+            attributedContent.append(("    \(language.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) //   Increased padding
+            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
+            attributedContent.append(("(\(language.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
+        }
+        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
+
+        // SDKs & APIs section
+        attributedContent.append(("  SDKS & APIS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
+
+        let sortedSDKs = resume.skills.sdksApis
+            .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
+
+        for (_, sdk) in sortedSDKs.enumerated() { // Replaced index with _
+            let progressBar = drawProgressBar(current: sdk.rating, maxVal: 5, width: 20)
+            attributedContent.append(("    \(sdk.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
+            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
+            attributedContent.append(("(\(sdk.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
+        }
+        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
+
+        // Tools & Technologies section
+        // TODO: Verify if 'toolsAndTechnologies' should be part of Skills model and resume.yml
+        // attributedContent.append(("  TOOLS & TECHNOLOGIES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        // // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
+        // var toolsLine = "    "
+        // for (index, tool) in resume.skills.toolsAndTechnologies.enumerated() { // This field does not exist in Skills model
+        //     if toolsLine.count + tool.count + (index == 0 ? 0 : 2) > 78 { // Approx width check
+        //         attributedContent.append((toolsLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
+        //         toolsLine = "    "
+        //     }
+        //     toolsLine += (index == 0 ? "" : ", ") + tool
+        // }
+        // if !toolsLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        //     attributedContent.append((toolsLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
+        // }
+        // attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
+
+        // Methodologies section (if it exists)
+        // TODO: Verify if 'methodologies' should be part of Skills model and resume.yml
+        // if let methodologies = resume.skills.methodologies, !methodologies.isEmpty { // This field does not exist in Skills model
+        //     attributedContent.append(("  METHODOLOGIES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        //     // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
+        //     var methLine = "    "
+        //     for (index, meth) in methodologies.enumerated() {
+        //          if methLine.count + meth.count + (index == 0 ? 0 : 2) > 78 { // Approx width check
+        //             attributedContent.append((methLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
+        //             methLine = "    "
+        //         }
+        //         methLine += (index == 0 ? "" : ", ") + meth
+        //     }
+        //     if !methLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        //         attributedContent.append((methLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
+        //     }
+        // }
+
+        return attributedContent
+    }
+
+    @MainActor
+    static func formatProjectsTab(resume: Resume) -> [(String, Int32)] {
+        var attributedContent: [(String, Int32)] = []
+        guard let cw = tuiState.contentWin else { return [] }
+        let contentWidth = Int(getmaxx(cw) - 10)
+
+        attributedContent.append(("\n  PERSONAL PROJECTS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        for project in resume.personalProjects {
+            attributedContent.append(("  \(project.name)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+            // if let period = project.period {
+            //     attributedContent.append(("    Period: \(period)\n", Cncurses.COLOR_PAIR(3)))
+            // }
+            if let technologies = project.technologies, !technologies.isEmpty {
+                attributedContent.append(("    Technologies: \(technologies.joined(separator: ", "))\n", Cncurses.COLOR_PAIR(3)))
+            }
+            if let description = project.description {
+                attributedContent.append((wrapText(description, indent: 4, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
+            }
+
+            if let link = project.links?.first { // Get the first link's URL
+                let url = link.url
+                attributedContent.append(("    URL: ", Cncurses.COLOR_PAIR(3)))
+                attributedContent.append(("\(url)\n", Cncurses.COLOR_PAIR(4) | ResumeTUI.A_UNDERLINE))
+            }
+            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        }
+        return attributedContent
+    }
+
+    @MainActor
+    static func formatContributionsTab(resume: Resume) -> [(String, Int32)] {
+        var attributedContent: [(String, Int32)] = []
+        guard let cw = tuiState.contentWin else { return [] }
+        let contentWidth = Int(getmaxx(cw) - 10)
+
+        attributedContent.append(("\n  OPEN SOURCE CONTRIBUTIONS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
+
+        for contrib in resume.openSourceContributions {
+            attributedContent.append(("  \(contrib.name)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
+            if let technologies = contrib.technologies, !technologies.isEmpty {
+                 attributedContent.append(("    Technologies: \(technologies.joined(separator: ", "))\n", Cncurses.COLOR_PAIR(3)))
+            }
+            if let description = contrib.description {
+                attributedContent.append((wrapText(description, indent: 4, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
+            }
+
+            if let link = contrib.links?.first { // Get the first link's URL
+                let url = link.url
+                attributedContent.append(("    URL: ", Cncurses.COLOR_PAIR(3)))
+                attributedContent.append(("\(url)\n", Cncurses.COLOR_PAIR(4) | ResumeTUI.A_UNDERLINE))
+            }
+            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        }
+        return attributedContent
+    }
+
+    // MARK: - Ncurses UI Setup and Drawing (Static Methods)
+    @MainActor
+    static func setupNcurses() {
+        // Set the locale to the user's environment settings. This is crucial
+        // for ncurses to correctly handle multi-byte characters (UTF-8).
+        // It MUST be called before initscr().
+        _ = setlocale(LC_ALL, "")
+
+        tuiState.screen = initscr()
+        noecho()
+        keypad(tuiState.screen, true)
+        start_color()
+        curs_set(0)
+        if has_colors() {
+            init_pair(1, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
+            init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_CYAN))
+            init_pair(3, Int16(COLOR_CYAN), Int16(COLOR_BLACK))
+            init_pair(4, Int16(COLOR_GREEN), Int16(COLOR_BLACK))
+            init_pair(5, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))
+            init_pair(6, Int16(COLOR_RED), Int16(COLOR_BLACK))
+            init_pair(7, Int16(COLOR_MAGENTA), Int16(COLOR_BLACK))
+        }
+        bkgd(chtype(Cncurses.COLOR_PAIR(1)))
+        if getmaxy(tuiState.screen) < 30 || getmaxx(tuiState.screen) < 100 {
+            endwin()
+            print("Terminal too small. Please resize to at least 100x30.")
+            exit(1)
+        }
+        refresh()
+    }
+
+    @MainActor
+    static func createWindows() {
+        let _ = getmaxy(tuiState.screen) // Replaced maxY with _
+        let maxX = getmaxx(tuiState.screen)
+
+        tuiState.headerWin = newwin(3, maxX, 0, 0)
+        tuiState.contentWin = newwin(getmaxy(tuiState.screen) - 6, maxX, 3, 0) // Adjusted for header and footer
+        tuiState.footerWin = newwin(3, maxX, getmaxy(tuiState.screen) - 3, 0)
+
+        box(tuiState.headerWin, 0, 0)
+        box(tuiState.contentWin, 0, 0)
+        box(tuiState.footerWin, 0, 0)
+
+        refresh()
+    }
+
+    // Function to draw the header with tabs
+    @MainActor
+    static func drawHeader(window: OpaquePointer?) {
+        guard let window = window else { return }
+        wclear(window)
+        box(window, 0, 0) // Draw a box around the window
+
+        let _ = getmaxy(window) // Replaced maxY with _
+        let maxX = getmaxx(window)
+        let tabSpacing = (maxX - 2) / Int32(TAB_NAMES.count) // -2 for borders
+
+        for (index, name) in TAB_NAMES.enumerated() {
+            let startX = 1 + Int32(index) * tabSpacing
+            var attr = Cncurses.COLOR_PAIR(1)
+            if index == tuiState.currentTabIndex {
+                attr = Cncurses.COLOR_PAIR(2) | ResumeTUI.A_BOLD // Highlight current tab
+            }
+            wattron(window, attr)
+            _ = name.withCString { mvwaddstr(window, 1, startX, $0) }
+            wattroff(window, attr)
+        }
+        wrefresh(window)
+    }
+
+    // Function to draw the footer with instructions
+    @MainActor
+    static func drawFooter(window: OpaquePointer?) {
+        guard let window = window else { return }
+        wclear(window)
+        box(window, 0, 0)
+        let footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | Q: Quit"
+        _ = footerText.withCString { mvwaddstr(window, 1, (getmaxx(window) - Int32(footerText.count)) / 2, $0) }
+        wrefresh(window)
     }
 
     // Function to display content based on current tab
-    func displayContent() {
-        guard let contentWin = contentWin else { return }
+    @MainActor
+    static func displayContent() { // Removed parameters, will use tuiState directly
+        guard let contentWin = tuiState.contentWin else { return }
         wclear(contentWin)
 
-        var content = ""
-        switch currentTabIndex {
-        case 0: // Overview
-            content = formatOverviewTab(resume: resume)
-        case 1: // Experience
-            content = formatExperienceTab(resume: resume)
-        case 2: // Skills
-            content = formatSkillsTab(resume: resume)
-        case 3: // Projects
-            content = formatProjectsTab(resume: resume)
-        case 4: // Open Source
-            content = formatContributionsTab(resume: resume)
-        default:
-            content = ""
+        let attributedFormattedContent: [(String, Int32)]
+        switch tuiState.currentTabIndex {
+            case 0:
+                attributedFormattedContent = formatOverviewTab(resume: tuiState.resume)
+            case 1:
+                attributedFormattedContent = formatExperienceTab(resume: tuiState.resume)
+            case 2:
+                attributedFormattedContent = formatSkillsTab(resume: tuiState.resume)
+            case 3:
+                attributedFormattedContent = formatProjectsTab(resume: tuiState.resume)
+            case 4:
+                attributedFormattedContent = formatContributionsTab(resume: tuiState.resume)
+            default:
+                attributedFormattedContent = [("Unknown tab", Cncurses.COLOR_PAIR(1))]
         }
 
-        // Split content into lines and display with scrolling
-        let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
-        let contentMaxY = getmaxy(contentWin)
-        let visibleLines = min(Int(contentMaxY), lines.count - scrollPosition)
+        var currentY = 1 // Start drawing from the second line, leaving space for top border/padding
+        // let contentWidth = getmaxx(contentWin) - 2 // -2 for side borders or padding -> This was unused
 
-        for i in 0..<visibleLines {
-            let lineIndex = i + scrollPosition
-            if lineIndex < lines.count {
-                let line = lines[lineIndex]
-                let i32 = Int32(i)
+        // Calculate total lines in content to determine max scroll
+        var totalContentLines = 0
+        for (text, _) in attributedFormattedContent {
+            // This is a simplification. A more accurate line count would consider text wrapping.
+            // For now, counting newlines in the pre-formatted string segments.
+            totalContentLines += text.components(separatedBy: "\n").count - 1
+        }
+        // Ensure totalContentLines is at least 1 if there's any content, to avoid division by zero or negative maxScroll
+        totalContentLines = max(1, totalContentLines)
 
-                // Apply color to special sections
-                if line.contains("CONTACT INFORMATION") ||
-                   line.contains("PROFESSIONAL SUMMARY") ||
-                   line.contains("EDUCATION") ||
-                   line.contains("WORK EXPERIENCE") ||
-                   line.contains("TECHNICAL SKILLS") ||
-                   line.contains("PROGRAMMING LANGUAGES") ||
-                   line.contains("SDKs & APIs") ||
-                   line.contains("PERSONAL PROJECTS") ||
-                   line.contains("OPEN SOURCE CONTRIBUTIONS") {
-                    wattron(contentWin, COLOR_PAIR(4) | A_BOLD)
-                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
-                    wattroff(contentWin, COLOR_PAIR(4) | A_BOLD)
-                } else if line.contains("at ") && line.contains("Present") {
-                    // Job titles
-                    wattron(contentWin, COLOR_PAIR(5))
-                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
-                    wattroff(contentWin, COLOR_PAIR(5))
-                } else if line.contains("•") {
-                    // List items
-                    wattron(contentWin, COLOR_PAIR(6))
-                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
-                    wattroff(contentWin, COLOR_PAIR(6))
-                } else if line.contains("[█") {
-                    // Skill bars
-                    wattron(contentWin, A_BOLD)
-                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
-                    wattroff(contentWin, A_BOLD)
-                } else {
-                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
+        // Content window height, adjusted for border/padding
+        let contentWinHeight = getmaxy(contentWin) - 2
+
+        // Adjust scrollPosition if it's out of bounds
+        let maxScroll = max(0, totalContentLines - Int(contentWinHeight))
+        if tuiState.scrollPosition > maxScroll {
+            tuiState.scrollPosition = maxScroll
+        }
+        if tuiState.scrollPosition < 0 {
+            tuiState.scrollPosition = 0
+        }
+
+        // Apply scrolling: Skip lines based on scrollPosition
+        let linesToSkip = tuiState.scrollPosition // Changed to let as it's not mutated
+        var linesSkipped = 0
+
+        for (text, attr) in attributedFormattedContent {
+            let lines = text.components(separatedBy: "\n")
+            for (idx, lineContent) in lines.enumerated() {
+                if linesSkipped < linesToSkip {
+                    linesSkipped += 1
+                    continue // Skip this line
                 }
+
+                if currentY >= contentWinHeight { // Stop if we've filled the visible part of the window
+                    break
+                }
+
+                wattron(contentWin, attr)
+                _ = lineContent.withCString { mvwaddstr(contentWin, Int32(currentY), 1, $0) } // Start from X=1 for padding
+                wattroff(contentWin, attr)
+                currentY += 1
+
+                if idx < lines.count - 1 { // If it's not the last segment of a multi-line string from one (text,attr) pair
+                     // This ensures that if a single `text` has newlines, currentY is incremented for each actual line displayed
+                }
+            }
+            if currentY >= contentWinHeight {
+                break
             }
         }
 
+        box(contentWin, 0, 0) // Redraw box after clearing and writing content
         wrefresh(contentWin)
     }
 
-    // Function to refresh all windows
-    func refreshAll() {
-        // Global border for the entire screen
-        if let screen = mainScreen { // Ensure mainScreen is not nil
-            box(screen, 0, 0)
-        }
+    @MainActor
+    static func refreshAllUI() {
+        // Clear and redraw all windows
+        // Clear the main screen as well to avoid artifacts if windows are resized or moved
+        // clear() // Clears the entire physical screen. Use with caution or if needed.
+        // wnoutrefresh(stdscr) // Marks stdscr for refresh, to be updated with doupdate()
 
-        if let win = headerWin { wclear(win) }
-        if let win = contentWin {
-            wclear(win)
-            box(win, 0, 0)
-        }
-        if let win = footerWin { wclear(win) }
+        drawHeader(window: tuiState.headerWin)
+        displayContent() // displayContent now internally handles tuiState.contentWin and refreshes it
+        drawFooter(window: tuiState.footerWin)
 
-        drawHeader()
-        displayContent()
-        drawFooter()
-
-        wnoutrefresh(mainScreen!) // Prepare stdscr for refresh (if it has its own direct drawing beyond sub-windows)
-        if let win = headerWin { wnoutrefresh(win) }
-        if let win = contentWin { wnoutrefresh(win) }
-        if let win = footerWin { wnoutrefresh(win) }
-        doupdate() // Perform actual refresh of all prepared windows simultaneously
+        // doupdate() // Atomically updates the physical screen with all pending refreshes
+        // For individual window refreshes (wrefresh), doupdate might not be strictly necessary
+        // unless wnoutrefresh was used.
+        // However, if experiencing flickering or partial updates, using wnoutrefresh for each window
+        // followed by a single doupdate() at the end can help.
+        // For simplicity, direct wrefresh in drawHeader/Footer/displayContent is often sufficient.
     }
 
-    // Boot screen function
-    func displayBootScreen(window: OpaquePointer?) {
-        guard let screen = window else { return }
+    @MainActor
+    static func runMainLoop() {
+        var needsRedraw = true // Initially, draw everything
 
-        let maxY = getmaxy(screen)
+        while true {
+            if needsRedraw {
+                refreshAllUI()
+                needsRedraw = false
+            }
+
+            let ch = getch() // Get character input (blocking)
+
+            switch ch {
+            case KEY_LEFT, Int32(Character("h").asciiValue!):
+                if tuiState.currentTabIndex > 0 {
+                    tuiState.currentTabIndex -= 1
+                    tuiState.scrollPosition = 0 // Reset scroll on tab change
+                    needsRedraw = true
+                }
+            case KEY_RIGHT, Int32(Character("l").asciiValue!):
+                if tuiState.currentTabIndex < TAB_NAMES.count - 1 {
+                    tuiState.currentTabIndex += 1
+                    tuiState.scrollPosition = 0 // Reset scroll on tab change
+                    needsRedraw = true
+                }
+            case KEY_UP, Int32(Character("k").asciiValue!):
+                if tuiState.scrollPosition > 0 {
+                    tuiState.scrollPosition -= 1
+                    needsRedraw = true
+                }
+            case KEY_DOWN, Int32(Character("j").asciiValue!):
+                // Max scroll limit handled by displayContent by adjusting scrollPosition
+                // Simply increment scrollPosition; displayContent will clamp it.
+                tuiState.scrollPosition += 1
+                needsRedraw = true
+            case Int32(Character("q").asciiValue!):
+                return // Exit loop
+            case KEY_RESIZE: // Handle terminal resize
+                // Recreate windows with new dimensions
+                // Potentially more sophisticated handling for resizing is possible
+                // For now, just clear and redraw everything
+                endwin() // Temporarily end ncurses mode
+                setupNcurses() // Re-initialize with new terminal size
+                createWindows()
+                needsRedraw = true // Mark for full redraw
+            default:
+                break // Ignore other keys
+            }
+        }
+    }
+
+    @MainActor
+    static func displayBootScreen() {
+        guard let screen = tuiState.screen else { return }
+        let _ = getmaxy(screen) // Replaced maxY with _
         let maxX = getmaxx(screen)
 
-        curs_set(0) // Hide cursor
-        nodelay(screen, true) // Non-blocking getch
+        let bootText = [
+            "Joseph Mattiello's Resume",
+            "Loading...",
+            "(c) 2024"
+        ]
 
-        // Matrix rain setup
-        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()[]{};':\",./<>?~"
-        var columns = [Int32](repeating: -1, count: Int(maxX)) // Stores Y-coordinate of the head
-        var columnHeadChars = [Character?](repeating: nil, count: Int(maxX)) // Stores the char for the head
-        let trailLength: Int32 = 7 // Length of the trail
-        let animationDurationSeconds = 8 // Run animation a bit longer
-        let startTime = Date()
+        // Define a color pair for boot screen text if not already defined
+        // For example, using COLOR_PAIR(7) which was Magenta on Black
+        let bootTextColorPair = Cncurses.COLOR_PAIR(7)
 
-        // Initial clear of the screen before animation starts
-        wclear(screen)
-        // wrefresh(screen) // Not needed here, wrefresh is in the loop
+        clear() // Clear the entire screen
 
-        let titleText = "Joseph Mattiello's Resume"
-        let promptText = "Press any key to continue..."
-
-        var animationInterruptedByKey = false
-
-        while Date().timeIntervalSince(startTime) < Double(animationDurationSeconds) {
-            if getch() != ERR { 
-                animationInterruptedByKey = true
-                break // Exit on key press
-            }
-
-            // No wclear(screen) inside the main animation loop for trails
-
-            for x in 0..<Int(maxX) {
-                let currentHeadY = columns[x]
-
-                if currentHeadY != -1 { // If drop is active in this column
-                    // 1. Clear the character at the very end of the trail
-                    let trailEndY = currentHeadY - trailLength
-                    if trailEndY >= 0 {
-                        mvwaddch(screen, trailEndY, Int32(x), UInt32(UInt8(ascii: " ")))
-                    }
-
-                    // 2. Change the old head position to a trail character (green)
-                    if let headChar = columnHeadChars[x] {
-                        wattron(screen, COLOR_PAIR(5)) // Green for trail
-                        mvwaddwstr(screen, currentHeadY, Int32(x), swiftStringToWcharTArray(String(headChar)))
-                        wattroff(screen, COLOR_PAIR(5))
-                    }
-
-                    // 3. Advance head
-                    let newHeadY = currentHeadY + 1
-                    if newHeadY < maxY {
-                        columns[x] = newHeadY
-                        // Draw new head (white, bold)
-                        let headCharIndex = characters.index(characters.startIndex, offsetBy: Int.random(in: 0..<characters.count))
-                        let newHeadRandomChar = characters[headCharIndex]
-                        columnHeadChars[x] = newHeadRandomChar // Store for next frame's trail
-                        
-                        wattron(screen, COLOR_PAIR(7) | A_BOLD) // White & Bold for new head
-                        mvwaddwstr(screen, newHeadY, Int32(x), swiftStringToWcharTArray(String(newHeadRandomChar)))
-                        wattroff(screen, COLOR_PAIR(7) | A_BOLD)
-                    } else {
-                        // Drop has gone off screen (head reached bottom)
-                        // To ensure the full trail clears, continue moving 'head' conceptually
-                        // until trailEndY also goes off screen.
-                        // For simplicity now, we'll just make it inactive.
-                        // A more advanced approach would handle this gracefully.
-                        if trailEndY < maxY { // If trail is still on screen, keep 'active' to clear it
-                             columns[x] = newHeadY // let it go off screen
-                        } else {
-                             columns[x] = -1 // Fully off screen, make inactive
-                             columnHeadChars[x] = nil
-                        }
-                    }
-                } else { // Drop is inactive, try to start a new one
-                    if Int.random(in: 0...100) < 3 { // Lowered probability for sparser rain
-                        columns[x] = 0 // Start at top
-                        let headCharIndex = characters.index(characters.startIndex, offsetBy: Int.random(in: 0..<characters.count))
-                        let newHeadRandomChar = characters[headCharIndex]
-                        columnHeadChars[x] = newHeadRandomChar
-
-                        wattron(screen, COLOR_PAIR(7) | A_BOLD) // White & Bold for new head
-                        mvwaddwstr(screen, 0, Int32(x), swiftStringToWcharTArray(String(newHeadRandomChar)))
-                        wattroff(screen, COLOR_PAIR(7) | A_BOLD)
-                    }
-                }
-            }
-
-            // Draw centered title
-            let yTitle = maxY / 2 - 2 // Adjust as needed
-            let xTitle = (maxX - Int32(titleText.count)) / 2
-            wattron(screen, COLOR_PAIR(1) | A_BOLD) // White on Blue (Header BG) and Bold
-            mvwaddwstr(screen, yTitle, xTitle, swiftStringToWcharTArray(titleText))
-            wattroff(screen, COLOR_PAIR(1) | A_BOLD)
-
-            // Draw centered prompt
-            let yPrompt = maxY / 2 // Adjust as needed
-            let xPrompt = (maxX - Int32(promptText.count)) / 2
-            wattron(screen, COLOR_PAIR(3)) // White on Black (Default content)
-            mvwaddwstr(screen, yPrompt, xPrompt, swiftStringToWcharTArray(promptText))
-            wattroff(screen, COLOR_PAIR(3))
-
-            wrefresh(screen)
-            usleep(80000) // 80ms delay, adjust for desired speed
+        for (index, line) in bootText.enumerated() {
+            let yPosition = (getmaxy(screen) / 2) - Int32(bootText.count / 2) + Int32(index)
+            let xPosition = (maxX - Int32(line.count)) / 2
+            wattron(screen, bootTextColorPair | ResumeTUI.A_BOLD)
+            _ = line.withCString { mvwaddstr(screen, yPosition, xPosition, $0) }
+            wattroff(screen, bootTextColorPair | ResumeTUI.A_BOLD)
         }
 
-        nodelay(screen, false) // Blocking getch again
-
-        // If animation was exited by a key press, flush that key from buffer
-        if animationInterruptedByKey {
-            flushinp() // Clear the input buffer
-        }
-
-        wclear(screen) // Clear animation and the text on top
-
-        // Wait for a final key press before exiting the boot screen
-        // The prompt was visible during the animation.
-        getch() 
-
-        curs_set(1) // Show cursor again (optional, depends on if main app uses it)
-        wclear(screen) // CRUCIAL: Clear screen before returning to ensure main UI has a clean slate
+        refresh() // Refresh the screen to show the boot text
+        napms(200) // Pause for 200 milliseconds (ncurses way)
     }
 
-    // Display boot screen first
-    displayBootScreen(window: mainScreen)
-
-    // Initial display
-    refreshAll()
-
-    // Main input loop
-    while true {
-        let ch = getch()
-
-        switch ch {
-        case 113, 81: // 'q' or 'Q'
-            return
-        case 9: // '\t'
-            // Switch to next tab
-            currentTabIndex = (currentTabIndex + 1) % tabs.count
-            scrollPosition = 0
-            drawHeader()
-            displayContent()
-        case 259: // KEY_UP
-            // Scroll up
-            if scrollPosition > 0 {
-                scrollPosition -= 1
-                displayContent()
-            }
-        case 258: // KEY_DOWN
-            // Scroll down
-            let currentContent = getCurrentTabContent(resume: resume, tabIndex: currentTabIndex)
-            let linesCount = currentContent.split(separator: "\n").count
-            let contentMaxYscroll = getmaxy(contentWin)
-            if scrollPosition < linesCount - Int(contentMaxYscroll) && linesCount > Int(contentMaxYscroll) {
-                scrollPosition += 1
-                displayContent()
-            }
-        case 260: // KEY_LEFT
-            // Switch to previous tab
-            currentTabIndex = (currentTabIndex - 1 + tabs.count) % tabs.count
-            scrollPosition = 0
-            drawHeader()
-            displayContent()
-        case 261: // KEY_RIGHT
-            // Switch to next tab
-            currentTabIndex = (currentTabIndex + 1) % tabs.count
-            scrollPosition = 0
-            drawHeader()
-            displayContent()
-        default:
-            break
-        }
-    }
-}
-
-// Helper function to get content for the current tab
-func getCurrentTabContent(resume: Resume, tabIndex: Int) -> String {
-    switch tabIndex {
-    case 0: return formatOverviewTab(resume: resume)
-    case 1: return formatExperienceTab(resume: resume)
-    case 2: return formatSkillsTab(resume: resume)
-    case 3: return formatProjectsTab(resume: resume)
-    case 4: return formatContributionsTab(resume: resume)
-    default: return ""
-    }
-}
-
-// MARK: - Tab Formatting Functions
-
-// Formats the overview tab content
-func formatOverviewTab(resume: Resume) -> String {
-    var content = "\n  \(resume.name)\n\n"
-
-    // Contact information
-    content += "  CONTACT INFORMATION\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    if let email = resume.contact.email {
-        content += "  📧 Email: \(email)\n"
-    }
-    if let phone = resume.contact.phone {
-        content += "  📱 Phone: \(phone)\n"
-    }
-    if let website = resume.contact.website {
-        content += "  🌐 Website: \(website)\n"
-    }
-    if let linkedin = resume.contact.linkedin {
-        content += "  👔 LinkedIn: \(linkedin)\n"
-    }
-    if let github = resume.contact.github {
-        content += "  💻 GitHub: \(github)\n"
-    }
-
-    // Profile/Summary
-    content += "\n  PROFESSIONAL SUMMARY\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    content += wrapText(resume.profile, indent: 2, width: 80)
-
-    // Education
-    content += "\n\n  EDUCATION\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    for edu in resume.education {
-        content += "  \(edu.degree)\n"
-        var institutionText = "  \(edu.institution)"
-        if let year = edu.graduationYear {
-            institutionText += " (\(year))"
-        }
-        content += institutionText + "\n"
-
-        if let details = edu.details {
-            content += "  \(details)\n"
-        }
-        content += "\n"
-    }
-
-    return content
-}
-
-// Formats the experience tab content
-func formatExperienceTab(resume: Resume) -> String {
-    var content = "\n  WORK EXPERIENCE\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    for job in resume.experience {
-        content += "  \(job.title) at \(job.company)\n"
-        content += "  📅 \(job.startDate) - \(job.endDate ?? "Present") | 📍 \(job.location)\n\n"
-
-        // App Store link if available
-        if let appStoreUrl = job.appStoreUrl, !appStoreUrl.isEmpty {
-            content += "  🔗 App Store: \(appStoreUrl)\n"
-        }
-
-        // Media URLs if available
-        if let mediaUrls = job.mediaUrls, !mediaUrls.isEmpty {
-            content += "  🔗 Media Links:\n"
-            for url in mediaUrls {
-                content += "    • \(url)\n"
-            }
-            content += "\n"
-        }
-
-        // Responsibilities
-        content += "  Key Responsibilities:\n"
-        for responsibility in job.responsibilities {
-            content += wrapText("    • \(responsibility)", indent: 6, width: 80)
-            content += "\n"
-        }
-
-        content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
-    }
-
-    return content
-}
-
-// Formats the skills tab content
-func formatSkillsTab(resume: Resume) -> String {
-    var content = "\n  TECHNICAL SKILLS\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    // Programming Languages section
-    content += "  PROGRAMMING LANGUAGES\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    // Sort languages by rating (descending) and then alphabetically
-    let sortedLanguages = resume.skills.programmingLanguages
-        .sorted {
-            if $0.rating != $1.rating {
-                return $0.rating > $1.rating
-            }
-            return $0.name < $1.name
-        }
-
-    for language in sortedLanguages {
-        content += createSkillBar(skill: language, maxWidth: 30)
-        content += "\n"
-    }
-
-    content += "\n"
-
-    // SDKs & APIs section
-    content += "  SDKs & APIs\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n"
-
-    // Sort SDKs/APIs by rating (descending) and then alphabetically
-    let sortedSDKs = resume.skills.sdksApis
-        .sorted {
-            if $0.rating != $1.rating {
-                return $0.rating > $1.rating
-            }
-            return $0.name < $1.name
-        }
-
-    for sdk in sortedSDKs {
-        content += createSkillBar(skill: sdk, maxWidth: 30)
-        content += "\n"
-    }
-
-    return content
-}
-
-// Formats the projects tab content
-func formatProjectsTab(resume: Resume) -> String {
-    var content = "\n  PERSONAL PROJECTS\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    for project in resume.personalProjects {
-        content += "  \(project.name)\n"
-
-        // Project description
-        if let description = project.description {
-            content += wrapText(description, indent: 2, width: 80)
-            content += "\n"
-        }
-
-        // Technologies used
-        if let technologies = project.technologies, !technologies.isEmpty {
-            content += "  🔧 Technologies:\n"
-            content += "    \(technologies.joined(separator: ", "))\n"
-        }
-
-        // App Store link
-        if let appStoreLink = project.appStoreLink, !appStoreLink.isEmpty {
-            content += "  📱 App Store: \(appStoreLink)\n"
-        }
-
-        // Other links
-        if let links = project.links, !links.isEmpty {
-            content += "  🔗 Links:\n"
-            for link in links {
-                content += "    • \(link.title): \(link.url)\n"
-            }
-        }
-
-        content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
-    }
-
-    return content
-}
-
-// Formats the open source contributions tab content
-func formatContributionsTab(resume: Resume) -> String {
-    var content = "\n  OPEN SOURCE CONTRIBUTIONS\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
-
-    for contribution in resume.openSourceContributions {
-        content += "  \(contribution.name)\n"
-
-        // Contribution description
-        if let description = contribution.description {
-            content += wrapText(description, indent: 2, width: 80)
-            content += "\n"
-        }
-
-        // Links (including PRs)
-        if let links = contribution.links, !links.isEmpty {
-            content += "  🔗 Links:\n"
-            for link in links {
-                // Check if it's a PR link
-                let isPR = link.title.contains("PR") || link.url.contains("/pull/")
-                content += "    • \(isPR ? "🔀" : "🔗") \(link.title): \(link.url)\n"
-            }
-        }
-
-        content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
-    }
-
-    return content
-}
-
-// MARK: - Helper Functions
-
-// Creates a skill bar visualization
-func createSkillBar(skill: Skill, maxWidth: Int) -> String {
-    let barWidth = Int((Double(skill.rating) / 5.0) * Double(maxWidth))
-    let emptyWidth = maxWidth - barWidth
-
-    // Create the bar with filled and empty parts
-    let filledBar = String(repeating: "█", count: barWidth)
-    let emptyBar = String(repeating: "░", count: emptyWidth)
-
-    // Return the formatted string
-    return "  \(skill.name.padding(toLength: 20, withPad: " ", startingAt: 0)) [\(filledBar)\(emptyBar)] (\(skill.rating)/5)"
-}
-
-// Wraps text to fit within a specified width
-func wrapText(_ text: String, indent: Int = 0, width: Int) -> String {
-    var result = ""
-    var currentLine = ""
-    let indentStr = String(repeating: " ", count: indent)
-
-    let words = text.split(separator: " ")
-
-    for word in words {
-        let wordStr = String(word)
-        if currentLine.isEmpty {
-            currentLine = indentStr + wordStr
-        } else if currentLine.count + wordStr.count + 1 <= width {
-            currentLine += " " + wordStr
+    // MARK: - Main Entry Point
+    @MainActor
+    static func main() {
+        setupNcurses()
+        displayBootScreen() // Display boot screen after ncurses setup
+        createWindows()
+        if let resume = loadResumeData() {
+            tuiState.resume = resume
         } else {
-            result += currentLine + "\n"
-            currentLine = indentStr + wordStr
+            endwin()
+            let finalMessage = tuiState.lastError ?? "Failed to load resume data (unknown error)."
+            fputs("\n--- Resume Loading Error ---\n", stderr)
+            fputs("\(finalMessage)\n", stderr)
+            fputs("\n--- Debug Log ---\n", stderr)
+            for logEntry in tuiState.debugLog {
+                fputs("\(logEntry)\n", stderr)
+            }
+            fputs("--- End Debug Log ---\n", stderr)
+            exit(1)
         }
+        runMainLoop()
+        endwin() // Clean up ncurses before exiting
     }
-
-    if !currentLine.isEmpty {
-        result += currentLine
-    }
-
-    return result
 }
 
-// MARK: - Main Execution
-
-do {
-    // Load resume data from YAML file
-    let resume = try YAMLParser.loadResume()
-
-    // Run the resume TUI
-    try runResumeTUI(resume: resume)
-    exit(0) // Explicitly exit with success code after TUI finishes
-} catch YAMLError.fileNotFound {
-    print("Error: Resume YAML file not found.")
-    print("Make sure 'resume.yaml' is in the current directory or properly included in the package resources.")
-    exit(1)
-} catch YAMLError.parsingError(let message) {
-    print("Error parsing YAML file: \(message)")
-    exit(1)
-} catch {
-    print("Unexpected error: \(error.localizedDescription)")
-    exit(1)
-}
+// Explicitly call the main function to start the application
+ResumeTUI.main()

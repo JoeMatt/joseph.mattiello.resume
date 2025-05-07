@@ -290,6 +290,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
             mvwaddwstr(screen, lineY, lineX, swiftStringToWcharTArray(line))
         }
         wattroff(screen, A_BOLD)
+        wrefresh(screen) // Refresh the main screen to show the ASCII art before drawing the prompt box
 
         // "Press any key to continue" box
         let prompt = " Press any key to continue... "

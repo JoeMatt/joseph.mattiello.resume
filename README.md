@@ -2,8 +2,8 @@
 
 ## 📬 Contact Information
 
-📧 Email: [mail@joemattiello.com](mailto:mail@joemattiello.com)
-📱 Phone: +1 (646) 771-8603
+📧 Email: mail [at] joemattiello [dot] com
+📱 Phone: +1 xxx-xxx-xxxx
 🌐 Website: [http://joemattiello.dev](http://joemattiello.dev)
 👔 LinkedIn: [](https://www.linkedin.com/in/joemattiello/)
 💻 GitHub: [JoeMatt](https://github.com/JoeMatt)
@@ -377,3 +377,5 @@ Submitted major patches to the Pbxbuild tool, enabling conversion of complex Xco
 *Last updated: May 06, 2025*
 
 *This README was automatically generated from my [resume.yaml](resume.yaml) file.*
+
+*Contact information has been obfuscated to prevent automated scraping.*

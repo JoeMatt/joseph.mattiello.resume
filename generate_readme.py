@@ -25,9 +25,30 @@ def generate_markdown(resume_data):
     contact_md = []
     
     if contact.get('email'):
-        contact_md.append(f"📧 Email: [{contact['email']}](mailto:{contact['email']})")
+        # Obfuscate email to prevent scraping
+        email = contact['email']
+        obfuscated_email = email.replace('@', ' [at] ').replace('.', ' [dot] ')
+        contact_md.append(f"📧 Email: {obfuscated_email}")
     if contact.get('phone'):
-        contact_md.append(f"📱 Phone: {contact['phone']}")
+        # Obfuscate phone number to prevent scraping
+        phone = contact['phone']
+        # If it's in the format "+1 (646) 771-8603", obfuscate it
+        if phone.startswith('+'):
+            # Keep country code but obfuscate the rest
+            parts = phone.split(' ', 1)
+            if len(parts) > 1:
+                country_code = parts[0]
+                rest = parts[1]
+                obfuscated_phone = f"{country_code} xxx-xxx-xxxx"
+                contact_md.append(f"📱 Phone: {obfuscated_phone}")
+            else:
+                # If format is different, just mask most digits
+                obfuscated_phone = phone[:3] + '-xxx-xxxx'
+                contact_md.append(f"📱 Phone: {obfuscated_phone}")
+        else:
+            # For other formats, just mask most digits
+            obfuscated_phone = 'xxx-xxx-' + phone[-4:]
+            contact_md.append(f"📱 Phone: {obfuscated_phone}")
     if contact.get('website'):
         contact_md.append(f"🌐 Website: [{contact['website']}]({contact['website']})")
     if contact.get('linkedin'):
@@ -151,6 +172,7 @@ def generate_markdown(resume_data):
     md.append("\n---")
     md.append(f"\n*Last updated: {datetime.now().strftime('%B %d, %Y')}*")
     md.append("\n*This README was automatically generated from my [resume.yaml](resume.yaml) file.*")
+    md.append("\n*Contact information has been obfuscated to prevent automated scraping.*")
     
     return "\n".join(md)
 

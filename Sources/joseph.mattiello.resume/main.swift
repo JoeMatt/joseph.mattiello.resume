@@ -19,15 +19,14 @@ func initPairs() {
     init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_WHITE))
     // Pair 3: Unselected tab / Default content text (white text on black background)
     init_pair(3, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
-    // Pair 4: Section headers like "TECHNICAL SKILLS" (e.g., yellow on black for emphasis)
+    // Pair 4: Section headers in content (e.g., yellow or cyan on black)
     init_pair(4, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))
-    // Pair 5: Job titles or other important highlights (e.g., green on black)
+    // Pair 5: Green on black for hacker boot screen trail
     init_pair(5, Int16(COLOR_GREEN), Int16(COLOR_BLACK))
     // Pair 6: List items, skill names, or secondary info (e.g., cyan on black)
     init_pair(6, Int16(COLOR_CYAN), Int16(COLOR_BLACK))
-    // Pair 7: For skill bars (example: white on a slightly darker shade, or just bolded default)
-    // init_pair(7, Int16(COLOR_WHITE), Int16(COLOR_DARKGRAY)) // COLOR_DARKGRAY might not be standard
-    // Or simply use A_BOLD with default colors for skill bars if Pair 3 is black background.
+    // Pair 7: White on black for Matrix rain head
+    init_pair(7, Int16(COLOR_WHITE), Int16(COLOR_BLACK))
 }
 
 // Main entry point for the application
@@ -271,58 +270,88 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         let maxY = getmaxy(screen)
         let maxX = getmaxx(screen)
 
-        wclear(screen) // Clear the screen for the boot display
+        curs_set(0) // Hide cursor
+        nodelay(screen, true) // Non-blocking getch
 
-        // "L33t" style name
-        let nameArt = [
-            "   J0$3Ph M47713LL0'S R3$UM3   "
-        ]
+        // Matrix rain setup
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()[]{};':\",./<>?~"
+        var columns = [Int32](repeating: -1, count: Int(maxX)) // Stores Y-coordinate of the head
+        var columnHeadChars = [Character?](repeating: nil, count: Int(maxX)) // Stores the char for the head
+        let trailLength: Int32 = 7 // Length of the trail
+        let animationDurationSeconds = 8 // Run animation a bit longer
+        let startTime = Date()
 
-        // Calculate starting Y position to center the art vertically
-        let artHeight = Int32(nameArt.count)
-        let textStartY = (maxY - artHeight - 5) / 2 // -5 for the box below
+        // Initial clear of the screen before animation starts
+        wclear(screen)
+        wrefresh(screen)
 
-        // Display ASCII art name
-        wattron(screen, A_BOLD)
-        for (i, line) in nameArt.enumerated() {
-            let lineY = textStartY + Int32(i)
-            let lineX = (maxX - Int32(line.count)) / 2
-            mvwaddwstr(screen, lineY, lineX, swiftStringToWcharTArray(line))
-        }
-        wattroff(screen, A_BOLD)
-        wrefresh(screen) // Refresh the main screen to show the ASCII art before drawing the prompt box
+        while Date().timeIntervalSince(startTime) < Double(animationDurationSeconds) {
+            if getch() != ERR { break } // Exit on key press
 
-        // "Press any key to continue" box
-        let prompt = " Press any key to continue... "
-        let promptWidth = Int32(prompt.count)
-        let boxHeight: Int32 = 3 // For a box with 1 line of text inside
-        let boxWidth = promptWidth + 2 // +2 for side borders of the box() function
+            // No wclear(screen) inside the main animation loop for trails
 
-        let boxY = textStartY + artHeight + 2 // 2 lines below the art
-        let boxX = (maxX - boxWidth) / 2
+            for x in 0..<Int(maxX) {
+                let currentHeadY = columns[x]
 
-        // Create a new window for the prompt box
-        let promptWin = newwin(boxHeight, boxWidth, boxY, boxX)
-        guard let promptWin = promptWin else {
-            // Fallback if window creation fails, though unlikely here
-            mvwaddwstr(screen, boxY + 1, boxX + 1, swiftStringToWcharTArray(prompt))
+                if currentHeadY != -1 { // If drop is active in this column
+                    // 1. Clear the character at the very end of the trail
+                    let trailEndY = currentHeadY - trailLength
+                    if trailEndY >= 0 {
+                        mvwaddch(screen, trailEndY, Int32(x), UInt32(UInt8(ascii: " ")))
+                    }
+
+                    // 2. Change the old head position to a trail character (green)
+                    if let headChar = columnHeadChars[x] {
+                        wattron(screen, COLOR_PAIR(5)) // Green for trail
+                        mvwaddwstr(screen, currentHeadY, Int32(x), swiftStringToWcharTArray(String(headChar)))
+                        wattroff(screen, COLOR_PAIR(5))
+                    }
+
+                    // 3. Advance head
+                    let newHeadY = currentHeadY + 1
+                    if newHeadY < maxY {
+                        columns[x] = newHeadY
+                        // Draw new head (white, bold)
+                        let headCharIndex = characters.index(characters.startIndex, offsetBy: Int.random(in: 0..<characters.count))
+                        let newHeadRandomChar = characters[headCharIndex]
+                        columnHeadChars[x] = newHeadRandomChar // Store for next frame's trail
+                        
+                        wattron(screen, COLOR_PAIR(7) | A_BOLD) // White & Bold for new head
+                        mvwaddwstr(screen, newHeadY, Int32(x), swiftStringToWcharTArray(String(newHeadRandomChar)))
+                        wattroff(screen, COLOR_PAIR(7) | A_BOLD)
+                    } else {
+                        // Drop has gone off screen (head reached bottom)
+                        // To ensure the full trail clears, continue moving 'head' conceptually
+                        // until trailEndY also goes off screen.
+                        // For simplicity now, we'll just make it inactive.
+                        // A more advanced approach would handle this gracefully.
+                        if trailEndY < maxY { // If trail is still on screen, keep 'active' to clear it
+                             columns[x] = newHeadY // let it go off screen
+                        } else {
+                             columns[x] = -1 // Fully off screen, make inactive
+                             columnHeadChars[x] = nil
+                        }
+                    }
+                } else { // Drop is inactive, try to start a new one
+                    if Int.random(in: 0...100) < 3 { // Lowered probability for sparser rain
+                        columns[x] = 0 // Start at top
+                        let headCharIndex = characters.index(characters.startIndex, offsetBy: Int.random(in: 0..<characters.count))
+                        let newHeadRandomChar = characters[headCharIndex]
+                        columnHeadChars[x] = newHeadRandomChar
+
+                        wattron(screen, COLOR_PAIR(7) | A_BOLD) // White & Bold for new head
+                        mvwaddwstr(screen, 0, Int32(x), swiftStringToWcharTArray(String(newHeadRandomChar)))
+                        wattroff(screen, COLOR_PAIR(7) | A_BOLD)
+                    }
+                }
+            }
+
             wrefresh(screen)
-            getch()
-            return
+            usleep(80000) // 80ms delay, adjust for desired speed
         }
 
-        box(promptWin, 0, 0) // Draw a box around the new window
-        mvwaddwstr(promptWin, 1, 1, swiftStringToWcharTArray(prompt)) // Text inside the box (y=1, x=1 relative to promptWin)
-
-        wrefresh(promptWin) // Refresh the prompt window to display it
-        // wrefresh(screen) // Refresh the main screen if there were other changes (not strictly needed here as promptWin is on top)
-
-        getch()          // Wait for key press
-
-        delwin(promptWin) // Delete the prompt window after use
-        // Need to touch and refresh the area on stdscr that was covered by promptWin
-        // or clear and refresh the whole screen if we want to ensure no artifacts.
-        // For simplicity now, a full refresh of the main screen will happen when the main UI loads.
+        nodelay(screen, false) // Blocking getch again
+        wclear(screen) // CRUCIAL: Clear screen before returning to ensure main UI has a clean slate
     }
 
     // Display boot screen first

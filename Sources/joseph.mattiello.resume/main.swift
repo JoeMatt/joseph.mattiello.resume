@@ -3,6 +3,7 @@
 
 import Foundation
 import Cncurses
+import Darwin // For setlocale, LC_ALL
 
 // Main entry point for the application
 func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later parts of the function might still use it
@@ -19,6 +20,9 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     }
     defer { endwin() } // Ensures ncurses environment is closed properly
 
+    // Set locale for UTF-8 character support, crucial for ncursesw
+    _ = setlocale(LC_ALL, "")
+
     if !has_colors() {
         // endwin() is handled by defer
         print("Error: Terminal does not support colors.")
@@ -29,7 +33,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     noecho()             // Don't echo user key presses
     cbreak()             // Disable line buffering, characters are immediately available
     keypad(mainScreen, true) // Enable function keys (F1, arrow keys, etc.) for the main screen
-    timeout(0)           // Set non-blocking input mode (getch() returns ERR if no input immediately)
+    // timeout(0)           // Set non-blocking input mode (getch() returns ERR if no input immediately)
 
     // Get screen dimensions
     var maxY: Int32 = 0 // ncurses functions use Int32 for coordinates and dimensions
@@ -61,7 +65,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     let headerWin: OpaquePointer? = newwin(3, maxX, 0, 0)
 
     let contentWin: OpaquePointer? = newwin(maxY - 4, maxX, 3, 0)
-    // if let win = contentWin { scrollok(win, true) } // Example: If scrolling is needed for contentWin
+    if let win = contentWin { scrollok(win, true) } // Enable scrolling for contentWin
 
     let footerWin: OpaquePointer? = newwin(1, maxX, maxY - 1, 0)
         
@@ -495,6 +499,7 @@ do {
     
     // Run the resume TUI
     try runResumeTUI(resume: resume)
+    exit(0) // Explicitly exit with success code after TUI finishes
 } catch YAMLError.fileNotFound {
     print("Error: Resume YAML file not found.")
     print("Make sure 'resume.yaml' is in the current directory or properly included in the package resources.")

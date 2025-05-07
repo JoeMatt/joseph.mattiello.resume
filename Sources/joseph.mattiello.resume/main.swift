@@ -139,7 +139,7 @@ struct ResumeTUI {
 
         for urlOptional in urlsToTry {
             guard let url = urlOptional else { continue }
-            
+
             // Check if file exists at this URL before attempting to load
             if FileManager.default.fileExists(atPath: url.path) {
                 tuiState.appendToDebugLog("Attempting to load resume from: \(url.path)")
@@ -161,248 +161,12 @@ struct ResumeTUI {
         return nil
     }
 
-    // MARK: - Content Formatting (Static Methods)
-    @MainActor
-    static func formatOverviewTab(resume: Resume) -> [(String, Int32)] {
-        var attributedContent: [(String, Int32)] = []
-        guard let cw = tuiState.contentWin else { return [] }
-        let contentWidth = Int(getmaxx(cw) - 6)
+    // MARK: - Formatting Helpers (Static Methods)
 
-        attributedContent.append(("\n  \(resume.name)\n\n", ResumeTUI.A_BOLD))
-
-        attributedContent.append(("  CONTACT INFORMATION\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
-        if let email = resume.contact.email {
-            attributedContent.append(("  Email: ", Cncurses.COLOR_PAIR(3)))
-            attributedContent.append(("\(email)\n", Cncurses.COLOR_PAIR(4)))
-        }
-        if let phone = resume.contact.phone {
-            attributedContent.append(("  Phone: \(phone)\n", Cncurses.COLOR_PAIR(3)))
-        }
-        if let website = resume.contact.website {
-            attributedContent.append(("  Website: ", Cncurses.COLOR_PAIR(3)))
-            attributedContent.append(("\(website)\n", Cncurses.COLOR_PAIR(4)))
-        }
-        if let linkedin = resume.contact.linkedin {
-            attributedContent.append(("  LinkedIn: ", Cncurses.COLOR_PAIR(3)))
-            attributedContent.append(("https://linkedin.com/in/\(linkedin)\n", Cncurses.COLOR_PAIR(4)))
-        }
-        if let github = resume.contact.github {
-            attributedContent.append(("  GitHub: ", Cncurses.COLOR_PAIR(3)))
-            attributedContent.append(("https://github.com/\(github)\n", Cncurses.COLOR_PAIR(4)))
-        }
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
-
-        // Profile/Summary
-        attributedContent.append(("  PROFESSIONAL SUMMARY\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-        attributedContent.append((wrapText(resume.profile, indent: 2, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
-
-        // Education
-        attributedContent.append(("  EDUCATION\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        for edu in resume.education {
-            attributedContent.append(("  \(edu.degree)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-            attributedContent.append(("    \(edu.institution)\n", Cncurses.COLOR_PAIR(3))) // Removed edu.location
-            attributedContent.append(("    \(edu.graduationYear ?? "N/A")\n\n", Cncurses.COLOR_PAIR(3)))
-        }
-
-        // Skills Section (Summary - Top 5 Programming Languages and SDKs/APIs)
-        attributedContent.append(("\n  KEY SKILLS SUMMARY\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        // Top 5 Programming Languages (example, adjust as needed)
-        attributedContent.append(("    Top Programming Languages:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(4)))
-        let sortedLanguages = resume.skills.programmingLanguages.sorted { $0.rating > $1.rating }.prefix(5)
-
-        for language in sortedLanguages {
-            let progressBar = drawProgressBar(current: language.rating, maxVal: 5, width: 20)
-            attributedContent.append(("    \(language.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
-            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
-            attributedContent.append(("\(String(repeating: "★", count: language.rating))\(String(repeating: "☆", count: 5 - language.rating))\n", Cncurses.COLOR_PAIR(5)))
-        }
-
-        // Top 5 SDKs/APIs (example, adjust as needed)
-        attributedContent.append(("\n    Top SDKs/APIs:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(4)))
-        let sortedSDKs = resume.skills.sdksApis.sorted { $0.rating > $1.rating }.prefix(5)
-
-        for (_, sdk) in sortedSDKs.enumerated() { // Replaced index with _
-            let progressBar = drawProgressBar(current: sdk.rating, maxVal: 5, width: 20)
-            attributedContent.append(("    \(sdk.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
-            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
-            attributedContent.append(("\(String(repeating: "★", count: sdk.rating))\(String(repeating: "☆", count: 5 - sdk.rating))\n", Cncurses.COLOR_PAIR(5)))
-        }
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Extra space
-
-        return attributedContent
-    }
-
-    @MainActor
-    static func formatExperienceTab(resume: Resume) -> [(String, Int32)] {
-        var attributedContent: [(String, Int32)] = []
-        guard let cw = tuiState.contentWin else { return [] }
-        let contentWidth = Int(getmaxx(cw) - 10) // dynamically get width, less more padding for items
-
-        attributedContent.append(("\n  WORK EXPERIENCE\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        for job in resume.experience {
-            attributedContent.append(("  \(job.title) at \(job.company)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-            let period = "\(job.startDate) - \(job.endDate ?? "Present")"
-            attributedContent.append(("    \(period) | \(job.location)\n", Cncurses.COLOR_PAIR(3))) // Removed ?? "" as job.location is not optional
-            // if !job.description.isEmpty { // 'description' field doesn't exist in Experience model
-            //     attributedContent.append(("    \(wrapText(job.description, indent: 4, width: contentWidth))\n", Cncurses.COLOR_PAIR(3)))
-            // }
-            if !job.responsibilities.isEmpty {
-                attributedContent.append(("    Key Responsibilities:\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-                for resp in job.responsibilities {
-                    attributedContent.append((wrapText("- " + resp, indent: 6, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
-                }
-                attributedContent.append(("\n", Cncurses.COLOR_PAIR(3))) // Space after responsibilities
-            }
-
-            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
-        }
-
-        return attributedContent
-    }
-
-    @MainActor
-    static func formatSkillsTab(resume: Resume) -> [(String, Int32)] {
-        var attributedContent: [(String, Int32)] = []
-        // guard let cw = tuiState.contentWin else { return [] } // Not using contentWidth directly here but good practice if it were
-        // let contentWidth = Int(getmaxx(cw) - 6)
-
-        attributedContent.append(("\n  TECHNICAL SKILLS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        // Programming Languages section
-        attributedContent.append(("  PROGRAMMING LANGUAGES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3))) // Minor separator
-
-        let sortedLanguages = resume.skills.programmingLanguages
-            .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
-
-        for language in sortedLanguages {
-            let progressBar = drawProgressBar(current: language.rating, maxVal: 5, width: 20)
-            attributedContent.append(("    \(language.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) //   Increased padding
-            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
-            attributedContent.append(("(\(language.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
-        }
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
-
-        // SDKs & APIs section
-        attributedContent.append(("  SDKS & APIS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
-
-        let sortedSDKs = resume.skills.sdksApis
-            .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
-
-        for (_, sdk) in sortedSDKs.enumerated() { // Replaced index with _
-            let progressBar = drawProgressBar(current: sdk.rating, maxVal: 5, width: 20)
-            attributedContent.append(("    \(sdk.name.padding(toLength: 25, withPad: " ", startingAt: 0)) ", Cncurses.COLOR_PAIR(3))) // Increased padding
-            attributedContent.append(("\(progressBar) ", Cncurses.COLOR_PAIR(5))) // Apply color to progress bar
-            attributedContent.append(("(\(sdk.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
-        }
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
-
-        // Tools & Technologies section
-        // TODO: Verify if 'toolsAndTechnologies' should be part of Skills model and resume.yml
-        // attributedContent.append(("  TOOLS & TECHNOLOGIES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        // // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
-        // var toolsLine = "    "
-        // for (index, tool) in resume.skills.toolsAndTechnologies.enumerated() { // This field does not exist in Skills model
-        //     if toolsLine.count + tool.count + (index == 0 ? 0 : 2) > 78 { // Approx width check
-        //         attributedContent.append((toolsLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
-        //         toolsLine = "    "
-        //     }
-        //     toolsLine += (index == 0 ? "" : ", ") + tool
-        // }
-        // if !toolsLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        //     attributedContent.append((toolsLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
-        // }
-        // attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
-
-        // Methodologies section (if it exists)
-        // TODO: Verify if 'methodologies' should be part of Skills model and resume.yml
-        // if let methodologies = resume.skills.methodologies, !methodologies.isEmpty { // This field does not exist in Skills model
-        //     attributedContent.append(("  METHODOLOGIES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        //     // attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n", Cncurses.COLOR_PAIR(3)))
-        //     var methLine = "    "
-        //     for (index, meth) in methodologies.enumerated() {
-        //          if methLine.count + meth.count + (index == 0 ? 0 : 2) > 78 { // Approx width check
-        //             attributedContent.append((methLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
-        //             methLine = "    "
-        //         }
-        //         methLine += (index == 0 ? "" : ", ") + meth
-        //     }
-        //     if !methLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        //         attributedContent.append((methLine.trimmingCharacters(in: .whitespacesAndNewlines) + "\n", Cncurses.COLOR_PAIR(3)))
-        //     }
-        // }
-
-        return attributedContent
-    }
-
-    @MainActor
-    static func formatProjectsTab(resume: Resume) -> [(String, Int32)] {
-        var attributedContent: [(String, Int32)] = []
-        guard let cw = tuiState.contentWin else { return [] }
-        let contentWidth = Int(getmaxx(cw) - 10)
-
-        attributedContent.append(("\n  PERSONAL PROJECTS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        for project in resume.personalProjects {
-            attributedContent.append(("  \(project.name)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-            // if let period = project.period {
-            //     attributedContent.append(("    Period: \(period)\n", Cncurses.COLOR_PAIR(3)))
-            // }
-            if let technologies = project.technologies, !technologies.isEmpty {
-                attributedContent.append(("    Technologies: \(technologies.joined(separator: ", "))\n", Cncurses.COLOR_PAIR(3)))
-            }
-            if let description = project.description {
-                attributedContent.append((wrapText(description, indent: 4, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
-            }
-
-            if let link = project.links?.first { // Get the first link's URL
-                let url = link.url
-                attributedContent.append(("    URL: ", Cncurses.COLOR_PAIR(3)))
-                attributedContent.append(("\(url)\n", Cncurses.COLOR_PAIR(4) | ResumeTUI.A_UNDERLINE))
-            }
-            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
-        }
-        return attributedContent
-    }
-
-    @MainActor
-    static func formatContributionsTab(resume: Resume) -> [(String, Int32)] {
-        var attributedContent: [(String, Int32)] = []
-        guard let cw = tuiState.contentWin else { return [] }
-        let contentWidth = Int(getmaxx(cw) - 10)
-
-        attributedContent.append(("\n  OPEN SOURCE CONTRIBUTIONS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append(("  " + String(repeating: "─", count: 30) + "\n\n", Cncurses.COLOR_PAIR(3)))
-
-        for contrib in resume.openSourceContributions {
-            attributedContent.append(("  \(contrib.name)\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-            if let technologies = contrib.technologies, !technologies.isEmpty {
-                 attributedContent.append(("    Technologies: \(technologies.joined(separator: ", "))\n", Cncurses.COLOR_PAIR(3)))
-            }
-            if let description = contrib.description {
-                attributedContent.append((wrapText(description, indent: 4, width: contentWidth) + "\n", Cncurses.COLOR_PAIR(3)))
-            }
-
-            if let link = contrib.links?.first { // Get the first link's URL
-                let url = link.url
-                attributedContent.append(("    URL: ", Cncurses.COLOR_PAIR(3)))
-                attributedContent.append(("\(url)\n", Cncurses.COLOR_PAIR(4) | ResumeTUI.A_UNDERLINE))
-            }
-            attributedContent.append(("\n  " + String(repeating: "·", count: contentWidth - 4) + "\n\n", Cncurses.COLOR_PAIR(3)))
-        }
-        return attributedContent
+    static func getRatingEmoji(rating: Int, maxRating: Int = 5, filledSymbol: String = "⭐", emptySymbol: String = "☆") -> String {
+        let filledCount = max(0, min(rating, maxRating))
+        let emptyCount = max(0, maxRating - filledCount)
+        return String(repeating: filledSymbol, count: filledCount) + String(repeating: emptySymbol, count: emptyCount)
     }
 
     // MARK: - Ncurses UI Setup and Drawing (Static Methods)
@@ -482,7 +246,7 @@ struct ResumeTUI {
         guard let window = window else { return }
         wclear(window)
         box(window, 0, 0)
-        let footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | Q: Quit"
+        let footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | 1-5 Tabs | Q: Quit"
         _ = footerText.withCString { mvwaddstr(window, 1, (getmaxx(window) - Int32(footerText.count)) / 2, $0) }
         wrefresh(window)
     }
@@ -496,15 +260,15 @@ struct ResumeTUI {
         let attributedFormattedContent: [(String, Int32)]
         switch tuiState.currentTabIndex {
             case 0:
-                attributedFormattedContent = formatOverviewTab(resume: tuiState.resume)
+                attributedFormattedContent = ResumeTUI.formatOverviewTab(resume: tuiState.resume)
             case 1:
-                attributedFormattedContent = formatExperienceTab(resume: tuiState.resume)
+                attributedFormattedContent = ResumeTUI.formatExperienceTab(resume: tuiState.resume)
             case 2:
-                attributedFormattedContent = formatSkillsTab(resume: tuiState.resume)
+                attributedFormattedContent = ResumeTUI.formatSkillsTab(resume: tuiState.resume)
             case 3:
-                attributedFormattedContent = formatProjectsTab(resume: tuiState.resume)
+                attributedFormattedContent = ResumeTUI.formatProjectsTab(resume: tuiState.resume)
             case 4:
-                attributedFormattedContent = formatContributionsTab(resume: tuiState.resume)
+                attributedFormattedContent = ResumeTUI.formatContributionsTab(resume: tuiState.resume)
             default:
                 attributedFormattedContent = [("Unknown tab", Cncurses.COLOR_PAIR(1))]
         }
@@ -622,6 +386,49 @@ struct ResumeTUI {
                 // Simply increment scrollPosition; displayContent will clamp it.
                 tuiState.scrollPosition += 1
                 needsRedraw = true
+            case KEY_PPAGE: // Page Up
+                if tuiState.scrollPosition > 0 {
+                    // Scroll up by the height of the content window (minus a line for context)
+                    // or a fixed amount, e.g., 10 lines.
+                    let pageScrollAmount = max(1, getmaxy(tuiState.contentWin) - 1)
+                    tuiState.scrollPosition = max(0, tuiState.scrollPosition - Int(pageScrollAmount))
+                    needsRedraw = true
+                }
+            case KEY_NPAGE: // Page Down
+                // displayContent will handle clamping if scrollPosition goes too far
+                let pageScrollAmount = max(1, getmaxy(tuiState.contentWin) - 1)
+                tuiState.scrollPosition += Int(pageScrollAmount)
+                needsRedraw = true
+            case Int32(Character("1").asciiValue!):
+                if tuiState.currentTabIndex != 0 {
+                    tuiState.currentTabIndex = 0
+                    tuiState.scrollPosition = 0
+                    needsRedraw = true
+                }
+            case Int32(Character("2").asciiValue!):
+                if tuiState.currentTabIndex != 1 {
+                    tuiState.currentTabIndex = 1
+                    tuiState.scrollPosition = 0
+                    needsRedraw = true
+                }
+            case Int32(Character("3").asciiValue!):
+                if tuiState.currentTabIndex != 2 {
+                    tuiState.currentTabIndex = 2
+                    tuiState.scrollPosition = 0
+                    needsRedraw = true
+                }
+            case Int32(Character("4").asciiValue!):
+                if tuiState.currentTabIndex != 3 {
+                    tuiState.currentTabIndex = 3
+                    tuiState.scrollPosition = 0
+                    needsRedraw = true
+                }
+            case Int32(Character("5").asciiValue!):
+                if tuiState.currentTabIndex != 4 {
+                    tuiState.currentTabIndex = 4
+                    tuiState.scrollPosition = 0
+                    needsRedraw = true
+                }
             case Int32(Character("q").asciiValue!):
                 return // Exit loop
             case KEY_RESIZE: // Handle terminal resize
@@ -641,31 +448,67 @@ struct ResumeTUI {
     @MainActor
     static func displayBootScreen() {
         guard let screen = tuiState.screen else { return }
-        let _ = getmaxy(screen) // Replaced maxY with _
+        let maxY = getmaxy(screen)
         let maxX = getmaxx(screen)
 
-        let bootText = [
-            "Joseph Mattiello's Resume",
-            "Loading...",
-            "(c) 2024"
-        ]
+        let titleText = "Joseph Mattiello's Resume"
+        let promptText = "Press any key to continue..."
+        let spinnerChars = ["|", "/", "-", "\\"]
+        var spinnerIndex = 0
 
-        // Define a color pair for boot screen text if not already defined
-        // For example, using COLOR_PAIR(7) which was Magenta on Black
-        let bootTextColorPair = Cncurses.COLOR_PAIR(7)
+        // Use color pair 4: Green on Black (defined in setupNcurses)
+        let matrixColorPair = Cncurses.COLOR_PAIR(4)
 
+        curs_set(0) // Hide cursor
         clear() // Clear the entire screen
+        
+        // Enable green on black for the whole screen if possible, or ensure text uses it
+        wbkgd(screen, chtype(matrixColorPair)) // Set background for the window
 
-        for (index, line) in bootText.enumerated() {
-            let yPosition = (getmaxy(screen) / 2) - Int32(bootText.count / 2) + Int32(index)
-            let xPosition = (maxX - Int32(line.count)) / 2
-            wattron(screen, bootTextColorPair | ResumeTUI.A_BOLD)
-            _ = line.withCString { mvwaddstr(screen, yPosition, xPosition, $0) }
-            wattroff(screen, bootTextColorPair | ResumeTUI.A_BOLD)
+        // Display title
+        wattron(screen, matrixColorPair | ResumeTUI.A_BOLD)
+        let titleY = maxY / 2 - 2
+        let titleX = (maxX - Int32(titleText.count)) / 2
+        _ = titleText.withCString { mvwaddstr(screen, titleY, titleX, $0) }
+        wattroff(screen, matrixColorPair | ResumeTUI.A_BOLD)
+
+        // Display prompt
+        wattron(screen, matrixColorPair)
+        let promptY = maxY / 2
+        let promptX = (maxX - Int32(promptText.count)) / 2
+        _ = promptText.withCString { mvwaddstr(screen, promptY, promptX, $0) }
+        wattroff(screen, matrixColorPair)
+
+        nodelay(screen, true) // Make getch non-blocking for the spinner
+        
+        var keyPressed = false
+        while !keyPressed {
+            let spinnerChar = spinnerChars[spinnerIndex]
+            let spinnerY = maxY / 2 + 2
+            let spinnerX = maxX / 2
+            
+            wattron(screen, matrixColorPair | ResumeTUI.A_BOLD)
+            _ = spinnerChar.withCString { mvwaddstr(screen, spinnerY, spinnerX, $0) }
+            wattroff(screen, matrixColorPair | ResumeTUI.A_BOLD)
+            
+            refresh()
+            
+            if getch() != ERR { // Check for key press
+                keyPressed = true
+            }
+            
+            napms(150) // Spinner speed
+            
+            // Clear only the spinner character for the next frame (optional, looks cleaner)
+            // For a true matrix effect, this might be different, e.g., fading or random characters.
+
+            spinnerIndex = (spinnerIndex + 1) % spinnerChars.count
         }
 
-        refresh() // Refresh the screen to show the boot text
-        napms(200) // Pause for 200 milliseconds (ncurses way)
+        nodelay(screen, false) // Restore blocking getch
+        curs_set(1) // Restore cursor
+        clear() // Clear boot screen before showing main UI
+        refresh()
     }
 
     // MARK: - Main Entry Point

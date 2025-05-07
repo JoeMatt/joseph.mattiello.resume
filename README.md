@@ -14,7 +14,7 @@ or
 wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash
 ```
 
-Requirements: Swift, Git, and a terminal that supports ncurses.
+Requirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.
 
 # Joseph Mattiello
 

@@ -9,7 +9,7 @@ import Darwin // For setlocale, LC_ALL
 // A_BOLD is typically (1U << (13 + 8)) = 1U << 21 = 2097152
 let A_BOLD: Int32 = 0x200000 // Or 2097152
 // You might need to define other A_* attributes (A_NORMAL, A_REVERSE, etc.) if used
-// let A_NORMAL: Int32 = 0 
+// let A_NORMAL: Int32 = 0
 
 // Function to initialize color pairs
 func initPairs() {
@@ -96,12 +96,12 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     let footerHeight: Int32 = 1
     // Ensure footerHeight doesn't exceed what's left of innerHeight
     let actualFooterHeight = min(footerHeight, innerHeight - actualHeaderHeight > 0 ? innerHeight - actualHeaderHeight : 0)
-    
+
     // Content window takes the remaining space
     // Ensure contentHeight is not negative
     let potentialContentHeight = innerHeight - actualHeaderHeight - actualFooterHeight
     let actualContentHeight = potentialContentHeight > 0 ? potentialContentHeight : 0
-    
+
     contentWin = newwin(actualContentHeight, innerWidth, innerY + actualHeaderHeight, innerX)
     if let win = contentWin {
         scrollok(win, true) // Enable scrolling for contentWin
@@ -136,24 +136,24 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
 
         mvwaddwstr(headerWin, 0, 0, swiftStringToWcharTArray("Joseph Mattiello's Resume"))
         wattroff(headerWin, COLOR_PAIR(1) | A_BOLD)
-        
+
         // Draw tabs
         var xPos: Int32 = 0
         for (index, tab) in tabs.enumerated() {
             let tabWidth = Int32(tab.count + 4)
             let selected = index == currentTabIndex
             let colorPairID = Int32(selected ? 2 : 3)
-            
+
             wattron(headerWin, COLOR_PAIR(colorPairID))
             mvwaddwstr(headerWin, 2, xPos, swiftStringToWcharTArray(" \(tab) "))
             wattroff(headerWin, COLOR_PAIR(colorPairID))
-            
+
             xPos += tabWidth
         }
-        
+
         wrefresh(headerWin)
     }
-    
+
     // Function to draw the footer
     func drawFooter() {
         guard let footerWin = footerWin else { return }
@@ -162,19 +162,19 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         // Center text within footerWin itself
         let footerWinMaxX = getmaxx(footerWin) // Get the actual width of footerWin
         let textX = (footerWinMaxX - Int32(footerText.count)) / 2
-        
+
         wattron(footerWin, COLOR_PAIR(1))
         // Ensure textX is not negative if footerText is too long for the window
         mvwaddwstr(footerWin, 0, max(0, textX), swiftStringToWcharTArray(footerText))
         wattroff(footerWin, COLOR_PAIR(1))
         // No wrefresh(footerWin) here, refreshAll handles it with doupdate
     }
-    
+
     // Function to display content based on current tab
     func displayContent() {
         guard let contentWin = contentWin else { return }
         wclear(contentWin)
-        
+
         var content = ""
         switch currentTabIndex {
         case 0: // Overview
@@ -190,27 +190,27 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         default:
             content = ""
         }
-        
+
         // Split content into lines and display with scrolling
         let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
         let contentMaxY = getmaxy(contentWin)
         let visibleLines = min(Int(contentMaxY), lines.count - scrollPosition)
-        
+
         for i in 0..<visibleLines {
             let lineIndex = i + scrollPosition
             if lineIndex < lines.count {
                 let line = lines[lineIndex]
                 let i32 = Int32(i)
-                
+
                 // Apply color to special sections
-                if line.contains("CONTACT INFORMATION") || 
-                   line.contains("PROFESSIONAL SUMMARY") || 
-                   line.contains("EDUCATION") || 
-                   line.contains("WORK EXPERIENCE") || 
-                   line.contains("TECHNICAL SKILLS") || 
-                   line.contains("PROGRAMMING LANGUAGES") || 
-                   line.contains("SDKs & APIs") || 
-                   line.contains("PERSONAL PROJECTS") || 
+                if line.contains("CONTACT INFORMATION") ||
+                   line.contains("PROFESSIONAL SUMMARY") ||
+                   line.contains("EDUCATION") ||
+                   line.contains("WORK EXPERIENCE") ||
+                   line.contains("TECHNICAL SKILLS") ||
+                   line.contains("PROGRAMMING LANGUAGES") ||
+                   line.contains("SDKs & APIs") ||
+                   line.contains("PERSONAL PROJECTS") ||
                    line.contains("OPEN SOURCE CONTRIBUTIONS") {
                     wattron(contentWin, COLOR_PAIR(4) | A_BOLD)
                     mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
@@ -235,10 +235,10 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
                 }
             }
         }
-        
+
         wrefresh(contentWin)
     }
-    
+
     // Function to refresh all windows
     func refreshAll() {
         // Global border for the entire screen
@@ -247,9 +247,9 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         }
 
         if let win = headerWin { wclear(win) }
-        if let win = contentWin { 
-            wclear(win) 
-            box(win, 0, 0) 
+        if let win = contentWin {
+            wclear(win)
+            box(win, 0, 0)
         }
         if let win = footerWin { wclear(win) }
 
@@ -263,7 +263,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         if let win = footerWin { wnoutrefresh(win) }
         doupdate() // Perform actual refresh of all prepared windows simultaneously
     }
-    
+
     // Boot screen function
     func displayBootScreen(window: OpaquePointer?) {
         guard let screen = window else { return }
@@ -272,7 +272,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         let maxX = getmaxx(screen)
 
         wclear(screen) // Clear the screen for the boot display
-        
+
         // "L33t" style name
         let nameArt = [
             "   J0$3Ph M47713LL0'S R3$UM3   "
@@ -313,7 +313,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
 
         box(promptWin, 0, 0) // Draw a box around the new window
         mvwaddwstr(promptWin, 1, 1, swiftStringToWcharTArray(prompt)) // Text inside the box (y=1, x=1 relative to promptWin)
-        
+
         wrefresh(promptWin) // Refresh the prompt window to display it
         // wrefresh(screen) // Refresh the main screen if there were other changes (not strictly needed here as promptWin is on top)
 
@@ -334,7 +334,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     // Main input loop
     while true {
         let ch = getch()
-        
+
         switch ch {
         case 113, 81: // 'q' or 'Q'
             return
@@ -394,11 +394,11 @@ func getCurrentTabContent(resume: Resume, tabIndex: Int) -> String {
 // Formats the overview tab content
 func formatOverviewTab(resume: Resume) -> String {
     var content = "\n  \(resume.name)\n\n"
-    
+
     // Contact information
     content += "  CONTACT INFORMATION\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    
+
     if let email = resume.contact.email {
         content += "  📧 Email: \(email)\n"
     }
@@ -414,16 +414,16 @@ func formatOverviewTab(resume: Resume) -> String {
     if let github = resume.contact.github {
         content += "  💻 GitHub: \(github)\n"
     }
-    
+
     // Profile/Summary
     content += "\n  PROFESSIONAL SUMMARY\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
     content += wrapText(resume.profile, indent: 2, width: 80)
-    
+
     // Education
     content += "\n\n  EDUCATION\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    
+
     for edu in resume.education {
         content += "  \(edu.degree)\n"
         var institutionText = "  \(edu.institution)"
@@ -431,13 +431,13 @@ func formatOverviewTab(resume: Resume) -> String {
             institutionText += " (\(year))"
         }
         content += institutionText + "\n"
-        
+
         if let details = edu.details {
             content += "  \(details)\n"
         }
         content += "\n"
     }
-    
+
     return content
 }
 
@@ -445,16 +445,16 @@ func formatOverviewTab(resume: Resume) -> String {
 func formatExperienceTab(resume: Resume) -> String {
     var content = "\n  WORK EXPERIENCE\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    
+
     for job in resume.experience {
         content += "  \(job.title) at \(job.company)\n"
         content += "  📅 \(job.startDate) - \(job.endDate ?? "Present") | 📍 \(job.location)\n\n"
-        
+
         // App Store link if available
         if let appStoreUrl = job.appStoreUrl, !appStoreUrl.isEmpty {
             content += "  🔗 App Store: \(appStoreUrl)\n"
         }
-        
+
         // Media URLs if available
         if let mediaUrls = job.mediaUrls, !mediaUrls.isEmpty {
             content += "  🔗 Media Links:\n"
@@ -463,63 +463,63 @@ func formatExperienceTab(resume: Resume) -> String {
             }
             content += "\n"
         }
-        
+
         // Responsibilities
         content += "  Key Responsibilities:\n"
         for responsibility in job.responsibilities {
             content += wrapText("    • \(responsibility)", indent: 6, width: 80)
             content += "\n"
         }
-        
+
         content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
     }
-    
+
     return content
 }
 
 // Formats the skills tab content
 func formatSkillsTab(resume: Resume) -> String {
-    var content = "  TECHNICAL SKILLS\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n"
-    
+    var content = "\n  TECHNICAL SKILLS\n"
+    content += "  " + String(repeating: "─", count: 30) + "\n\n"
+
     // Programming Languages section
     content += "  PROGRAMMING LANGUAGES\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n"
-    
+    content += "  " + String(repeating: "─", count: 30) + "\n\n"
+
     // Sort languages by rating (descending) and then alphabetically
     let sortedLanguages = resume.skills.programmingLanguages
-        .sorted { 
+        .sorted {
             if $0.rating != $1.rating {
                 return $0.rating > $1.rating
             }
             return $0.name < $1.name
         }
-    
+
     for language in sortedLanguages {
         content += createSkillBar(skill: language, maxWidth: 30)
         content += "\n"
     }
-    
+
     content += "\n"
-    
+
     // SDKs & APIs section
     content += "  SDKs & APIs\n"
     content += "  " + String(repeating: "─", count: 30) + "\n"
-    
+
     // Sort SDKs/APIs by rating (descending) and then alphabetically
     let sortedSDKs = resume.skills.sdksApis
-        .sorted { 
+        .sorted {
             if $0.rating != $1.rating {
                 return $0.rating > $1.rating
             }
             return $0.name < $1.name
         }
-    
+
     for sdk in sortedSDKs {
         content += createSkillBar(skill: sdk, maxWidth: 30)
         content += "\n"
     }
-    
+
     return content
 }
 
@@ -527,27 +527,27 @@ func formatSkillsTab(resume: Resume) -> String {
 func formatProjectsTab(resume: Resume) -> String {
     var content = "\n  PERSONAL PROJECTS\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    
+
     for project in resume.personalProjects {
         content += "  \(project.name)\n"
-        
+
         // Project description
         if let description = project.description {
             content += wrapText(description, indent: 2, width: 80)
             content += "\n"
         }
-        
+
         // Technologies used
         if let technologies = project.technologies, !technologies.isEmpty {
             content += "  🔧 Technologies:\n"
             content += "    \(technologies.joined(separator: ", "))\n"
         }
-        
+
         // App Store link
         if let appStoreLink = project.appStoreLink, !appStoreLink.isEmpty {
             content += "  📱 App Store: \(appStoreLink)\n"
         }
-        
+
         // Other links
         if let links = project.links, !links.isEmpty {
             content += "  🔗 Links:\n"
@@ -555,10 +555,10 @@ func formatProjectsTab(resume: Resume) -> String {
                 content += "    • \(link.title): \(link.url)\n"
             }
         }
-        
+
         content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
     }
-    
+
     return content
 }
 
@@ -566,16 +566,16 @@ func formatProjectsTab(resume: Resume) -> String {
 func formatContributionsTab(resume: Resume) -> String {
     var content = "\n  OPEN SOURCE CONTRIBUTIONS\n"
     content += "  " + String(repeating: "─", count: 30) + "\n\n"
-    
+
     for contribution in resume.openSourceContributions {
         content += "  \(contribution.name)\n"
-        
+
         // Contribution description
         if let description = contribution.description {
             content += wrapText(description, indent: 2, width: 80)
             content += "\n"
         }
-        
+
         // Links (including PRs)
         if let links = contribution.links, !links.isEmpty {
             content += "  🔗 Links:\n"
@@ -585,10 +585,10 @@ func formatContributionsTab(resume: Resume) -> String {
                 content += "    • \(isPR ? "🔀" : "🔗") \(link.title): \(link.url)\n"
             }
         }
-        
+
         content += "\n  " + String(repeating: "─", count: 50) + "\n\n"
     }
-    
+
     return content
 }
 
@@ -598,11 +598,11 @@ func formatContributionsTab(resume: Resume) -> String {
 func createSkillBar(skill: Skill, maxWidth: Int) -> String {
     let barWidth = Int((Double(skill.rating) / 5.0) * Double(maxWidth))
     let emptyWidth = maxWidth - barWidth
-    
+
     // Create the bar with filled and empty parts
     let filledBar = String(repeating: "█", count: barWidth)
     let emptyBar = String(repeating: "░", count: emptyWidth)
-    
+
     // Return the formatted string
     return "  \(skill.name.padding(toLength: 20, withPad: " ", startingAt: 0)) [\(filledBar)\(emptyBar)] (\(skill.rating)/5)"
 }
@@ -612,9 +612,9 @@ func wrapText(_ text: String, indent: Int = 0, width: Int) -> String {
     var result = ""
     var currentLine = ""
     let indentStr = String(repeating: " ", count: indent)
-    
+
     let words = text.split(separator: " ")
-    
+
     for word in words {
         let wordStr = String(word)
         if currentLine.isEmpty {
@@ -626,11 +626,11 @@ func wrapText(_ text: String, indent: Int = 0, width: Int) -> String {
             currentLine = indentStr + wordStr
         }
     }
-    
+
     if !currentLine.isEmpty {
         result += currentLine
     }
-    
+
     return result
 }
 
@@ -639,7 +639,7 @@ func wrapText(_ text: String, indent: Int = 0, width: Int) -> String {
 do {
     // Load resume data from YAML file
     let resume = try YAMLParser.loadResume()
-    
+
     // Run the resume TUI
     try runResumeTUI(resume: resume)
     exit(0) // Explicitly exit with success code after TUI finishes

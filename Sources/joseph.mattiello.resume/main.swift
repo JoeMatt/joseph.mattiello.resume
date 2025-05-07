@@ -26,6 +26,8 @@ struct ResumeTUI {
     // MARK: - Ncurses Constants & Helpers
     static let A_BOLD: Int32 = 0x00200000
     static let A_UNDERLINE: Int32 = 0x00000040
+    static let A_REVERSE: Int32 = 0x00040000 // Remains for potential other uses
+    // static let A_REVERSE_CHTYPE: chtype = chtype(ResumeTUI.A_REVERSE) // No longer needed for boot screen static text
 
     // MARK: - TUI State (Static Properties)
     @MainActor static var tuiState = TUIState()
@@ -187,14 +189,16 @@ struct ResumeTUI {
             init_pair(2, Int16(COLOR_BLACK), Int16(COLOR_CYAN))
             init_pair(3, Int16(COLOR_CYAN), Int16(COLOR_BLACK))
             init_pair(4, Int16(COLOR_GREEN), Int16(COLOR_BLACK))
-            init_pair(5, Int16(COLOR_YELLOW), Int16(COLOR_BLACK))
+            init_pair(5, Int16(COLOR_YELLOW), Int16(COLOR_BLACK)) // Ensure this is Yellow/Black for skill stars
             init_pair(6, Int16(COLOR_RED), Int16(COLOR_BLACK))
             init_pair(7, Int16(COLOR_MAGENTA), Int16(COLOR_BLACK))
+            init_pair(8, Int16(COLOR_BLACK), Int16(COLOR_GREEN)) // Black on Green for matrix overlay text
         }
         bkgd(chtype(Cncurses.COLOR_PAIR(1)))
-        if getmaxy(tuiState.screen) < 30 || getmaxx(tuiState.screen) < 100 {
+        // Allow smaller terminals for testing
+        if getmaxy(tuiState.screen) < 10 || getmaxx(tuiState.screen) < 40 {
             endwin()
-            print("Terminal too small. Please resize to at least 100x30.")
+            print("Terminal too small. Please resize to at least 40x10.")
             exit(1)
         }
         refresh()
@@ -447,68 +451,8 @@ struct ResumeTUI {
 
     @MainActor
     static func displayBootScreen() {
-        guard let screen = tuiState.screen else { return }
-        let maxY = getmaxy(screen)
-        let maxX = getmaxx(screen)
-
-        let titleText = "Joseph Mattiello's Resume"
-        let promptText = "Press any key to continue..."
-        let spinnerChars = ["|", "/", "-", "\\"]
-        var spinnerIndex = 0
-
-        // Use color pair 4: Green on Black (defined in setupNcurses)
-        let matrixColorPair = Cncurses.COLOR_PAIR(4)
-
-        curs_set(0) // Hide cursor
-        clear() // Clear the entire screen
-        
-        // Enable green on black for the whole screen if possible, or ensure text uses it
-        wbkgd(screen, chtype(matrixColorPair)) // Set background for the window
-
-        // Display title
-        wattron(screen, matrixColorPair | ResumeTUI.A_BOLD)
-        let titleY = maxY / 2 - 2
-        let titleX = (maxX - Int32(titleText.count)) / 2
-        _ = titleText.withCString { mvwaddstr(screen, titleY, titleX, $0) }
-        wattroff(screen, matrixColorPair | ResumeTUI.A_BOLD)
-
-        // Display prompt
-        wattron(screen, matrixColorPair)
-        let promptY = maxY / 2
-        let promptX = (maxX - Int32(promptText.count)) / 2
-        _ = promptText.withCString { mvwaddstr(screen, promptY, promptX, $0) }
-        wattroff(screen, matrixColorPair)
-
-        nodelay(screen, true) // Make getch non-blocking for the spinner
-        
-        var keyPressed = false
-        while !keyPressed {
-            let spinnerChar = spinnerChars[spinnerIndex]
-            let spinnerY = maxY / 2 + 2
-            let spinnerX = maxX / 2
-            
-            wattron(screen, matrixColorPair | ResumeTUI.A_BOLD)
-            _ = spinnerChar.withCString { mvwaddstr(screen, spinnerY, spinnerX, $0) }
-            wattroff(screen, matrixColorPair | ResumeTUI.A_BOLD)
-            
-            refresh()
-            
-            if getch() != ERR { // Check for key press
-                keyPressed = true
-            }
-            
-            napms(150) // Spinner speed
-            
-            // Clear only the spinner character for the next frame (optional, looks cleaner)
-            // For a true matrix effect, this might be different, e.g., fading or random characters.
-
-            spinnerIndex = (spinnerIndex + 1) % spinnerChars.count
-        }
-
-        nodelay(screen, false) // Restore blocking getch
-        curs_set(1) // Restore cursor
-        clear() // Clear boot screen before showing main UI
-        refresh()
+        // Use the new matrix boot screen implementation
+        displayMatrixBootScreen()
     }
 
     // MARK: - Main Entry Point

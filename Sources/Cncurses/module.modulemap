@@ -1,5 +1,4 @@
 module Cncurses {
-  header "shim.h" // Use the local shim header
-  link "ncursesw"
+  header "shim.h"
   export *
 }

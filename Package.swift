@@ -14,12 +14,25 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
-        .systemLibrary(
+        // Changed from .systemLibrary to .target to have more control over flags
+        .target(
             name: "Cncurses",
-            pkgConfig: "ncursesw", // Changed from ncurses to ncursesw
-            providers: [
-                .brew(["ncurses"]), // The brew package is still ncurses, it provides ncursesw
-                .apt(["libncurses-dev"])
+            path: "Sources/Cncurses", // Location of shim.h, shim.c, module.modulemap
+            publicHeadersPath: ".",   // shim.h and module.modulemap are directly in Sources/Cncurses
+            cSettings: [
+                // Use unsafeFlags for absolute header search paths
+                .unsafeFlags([
+                    "-I/opt/homebrew/opt/ncurses/include",
+                    "-I/opt/homebrew/opt/ncurses/include/ncursesw" // Be explicit for ncursesw subfolder
+                ]),
+                .define("NCURSES_WIDECHAR", to: "1"),
+                .define("_DARWIN_C_SOURCE", to: "1")
+            ],
+            linkerSettings: [
+                .linkedLibrary("ncursesw"),
+                .unsafeFlags([
+                    "-L/opt/homebrew/opt/ncurses/lib"
+                ])
             ]
         ),
         .executableTarget(

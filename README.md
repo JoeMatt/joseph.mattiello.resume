@@ -104,7 +104,7 @@ Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full St
 
 **Responsibilities:**
 - Designed and developed Citysense for iPhone pre-official SDK, leveraging API hacking expertise. Managed full codebase and design. Named on patents for contributions to backend data analysis systems. Featured on GigaOM & NY Times.
-- {'Assumed role of network and security engineer, establishing office/colo infrastructure': 'intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics.'}
+- Assumed role of network and security engineer, establishing office/colo infrastructure: intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics.
 - As a software engineer, created utilities for managing large datasets and authored significant patches for GNUstep's PBXBuild tool (XCode to GNUstep Makefile conversion), becoming an official FSF/GNU project developer.
 - Developed CabSense for iPhone, contributing to design and development with the Android team. Created pre-rendered assets and the Quartz 'Radar' view. Ensured secure server/client communication. Created reusable C/Cocoa libraries for third-party CabSense data interaction. Featured on VentureBeat, ZDNet, NY Times.
 
@@ -175,7 +175,7 @@ Contributed a pull request to UTM, a popular virtual machine host for iOS and ma
 
 **Links:**
 - [Project Link](https://getutm.app/)
-- [PR](https://github.com/utmapp/UTM/pull/3055)
+- [PR #3055](https://github.com/utmapp/UTM/pull/3055)
 
 ### retroarch
 
@@ -183,9 +183,9 @@ Contributed multiple pull requests, including fixes and improvements.
 
 **Links:**
 - [Project Link](https://www.retroarch.com/)
-- [PR](https://github.com/libretro/RetroArch/pull/17590)
-- [PR](https://github.com/libretro/RetroArch/pull/17591)
-- [PR](https://github.com/libretro/RetroArch/pull/17569)
+- [PR #17590](https://github.com/libretro/RetroArch/pull/17590)
+- [PR #17591](https://github.com/libretro/RetroArch/pull/17591)
+- [PR #17569](https://github.com/libretro/RetroArch/pull/17569)
 
 ### reicast
 
@@ -208,8 +208,8 @@ Contributed multiple significant pull requests to XMLCoder, a Swift library for 
 
 **Links:**
 - [Project Link](https://github.com/MaxDesiatov/XMLCoder/)
-- [PR](https://github.com/CoreOffice/XMLCoder/pull/73)
-- [PR](https://github.com/CoreOffice/XMLCoder/pull/70)
+- [PR #73 (Attributed Intrinsic Value Coding)](https://github.com/CoreOffice/XMLCoder/pull/73)
+- [PR #70 (Dynamic Node Encoding & Fixes)](https://github.com/CoreOffice/XMLCoder/pull/70)
 
 ### GLideN64
 
@@ -224,7 +224,7 @@ Contributed to SideJITServer, a project enabling JIT for sideloaded iOS applicat
 
 **Links:**
 - [Project Repository](https://github.com/nythepegasus/SideJITServer)
-- [Pull Request](https://github.com/nythepegasus/SideJITServer/pull/150)
+- [Pull Request #150](https://github.com/nythepegasus/SideJITServer/pull/150)
 
 ### Mono
 
@@ -232,24 +232,24 @@ Authored C# wrappers by hand for CoreMIDI, CoreAudio, and other Apple Foundation
 
 **Links:**
 - [Project Link](https://www.mono-project.com/)
-- [MonoMac PR](https://github.com/mono/monomac/pull/20)
-- [MonoMac PR](https://github.com/mono/monomac/pull/4)
+- [MonoMac PR #20 (CoreAudio, CoreMIDI)](https://github.com/mono/monomac/pull/20)
+- [MonoMac PR #4 (AppKit, Foundation, etc.)](https://github.com/mono/monomac/pull/4)
 
 ### MultiPatch
 
-Submitted a pull request (PR
+Submitted a pull request (PR #19) to MultiPatch, a versatile ROM patching tool, with proposed enhancements/fixes. (Pending Merge)
 
 **Links:**
 - [Project Repository](https://github.com/Sappharad/MultiPatch)
-- [PR](https://github.com/Sappharad/MultiPatch/pull/19)
+- [PR #19](https://github.com/Sappharad/MultiPatch/pull/19)
 
 ### OSSSpeechKit
 
-Added Swift Package Manager (SwiftPM) support to OSSSpeechKit, enabling easier integration for iOS, tvOS, and macCatalyst projects (PR
+Added Swift Package Manager (SwiftPM) support to OSSSpeechKit, enabling easier integration for iOS, tvOS, and macCatalyst projects (PR #34).
 
 **Links:**
 - [Project Repository](https://github.com/AppDevGuy/OSSSpeechKit)
-- [PR](https://github.com/AppDevGuy/OSSSpeechKit/pull/34)
+- [PR #34 (SwiftPM Support)](https://github.com/AppDevGuy/OSSSpeechKit/pull/34)
 
 ### sReto
 
@@ -271,7 +271,7 @@ Contributed a pull request to the Play! Framework, a high-velocity web framework
 
 **Links:**
 - [Project Link](https://github.com/jpd002/Play--Framework)
-- [PR](https://github.com/jpd002/Play--Framework/pull/44)
+- [PR #44](https://github.com/jpd002/Play--Framework/pull/44)
 
 ### EGYWebViewController
 
@@ -289,19 +289,19 @@ Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Ha
 
 ### PokeMini
 
-Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR
+Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR #17).
 
 **Links:**
 - [Project Link](https://github.com/libretro/PokeMini)
-- [PR](https://github.com/libretro/PokeMini/pull/17)
+- [PR #17 (Buffer Overflow Fix)](https://github.com/libretro/PokeMini/pull/17)
 
 ### OBD2Connect
 
-Added Swift Package Manager (SwiftPM) support, GitHub Actions validation, and addressed deprecations for OBD2Connect, a Swift library for OBD-II communication (PR
+Added Swift Package Manager (SwiftPM) support, GitHub Actions validation, and addressed deprecations for OBD2Connect, a Swift library for OBD-II communication (PR #4).
 
 **Links:**
 - [Project Repository](https://github.com/Wisors/OBD2Connect)
-- [PR](https://github.com/Wisors/OBD2Connect/pull/4)
+- [PR #4 (SwiftPM Support & Enhancements)](https://github.com/Wisors/OBD2Connect/pull/4)
 
 ### PINCache.Swift (Fork)
 
@@ -374,7 +374,7 @@ Submitted major patches to the Pbxbuild tool, enabling conversion of complex Xco
 
 ---
 
-*Last updated: May 06, 2025*
+*Last updated: May 07, 2025*
 
 *This README was automatically generated from my [resume.yaml](resume.yaml) file.*
 

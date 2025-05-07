@@ -283,10 +283,18 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
 
         // Initial clear of the screen before animation starts
         wclear(screen)
-        wrefresh(screen)
+        // wrefresh(screen) // Not needed here, wrefresh is in the loop
+
+        let titleText = "Joseph Mattiello's Resume"
+        let promptText = "Press any key to continue..."
+
+        var animationInterruptedByKey = false
 
         while Date().timeIntervalSince(startTime) < Double(animationDurationSeconds) {
-            if getch() != ERR { break } // Exit on key press
+            if getch() != ERR { 
+                animationInterruptedByKey = true
+                break // Exit on key press
+            }
 
             // No wclear(screen) inside the main animation loop for trails
 
@@ -346,11 +354,38 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
                 }
             }
 
+            // Draw centered title
+            let yTitle = maxY / 2 - 2 // Adjust as needed
+            let xTitle = (maxX - Int32(titleText.count)) / 2
+            wattron(screen, COLOR_PAIR(1) | A_BOLD) // White on Blue (Header BG) and Bold
+            mvwaddwstr(screen, yTitle, xTitle, swiftStringToWcharTArray(titleText))
+            wattroff(screen, COLOR_PAIR(1) | A_BOLD)
+
+            // Draw centered prompt
+            let yPrompt = maxY / 2 // Adjust as needed
+            let xPrompt = (maxX - Int32(promptText.count)) / 2
+            wattron(screen, COLOR_PAIR(3)) // White on Black (Default content)
+            mvwaddwstr(screen, yPrompt, xPrompt, swiftStringToWcharTArray(promptText))
+            wattroff(screen, COLOR_PAIR(3))
+
             wrefresh(screen)
             usleep(80000) // 80ms delay, adjust for desired speed
         }
 
         nodelay(screen, false) // Blocking getch again
+
+        // If animation was exited by a key press, flush that key from buffer
+        if animationInterruptedByKey {
+            flushinp() // Clear the input buffer
+        }
+
+        wclear(screen) // Clear animation and the text on top
+
+        // Wait for a final key press before exiting the boot screen
+        // The prompt was visible during the animation.
+        getch() 
+
+        curs_set(1) // Show cursor again (optional, depends on if main app uses it)
         wclear(screen) // CRUCIAL: Clear screen before returning to ensure main UI has a clean slate
     }
 

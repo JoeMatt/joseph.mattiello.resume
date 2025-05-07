@@ -20,35 +20,35 @@
                     <span>{{ resume_data.contact.phone }}</span>
                 </div>
                 {% endif %}
-                
+
                 {% if resume_data.contact.email %}
                 <div class="contact-item">
                     <i class="fas fa-envelope"></i>
                     <span>{{ resume_data.contact.email }}</span>
                 </div>
                 {% endif %}
-                
+
                 {% if resume_data.contact.linkedin %}
                 <div class="contact-item">
                     <i class="fab fa-linkedin"></i>
                     <span><a href="{{ resume_data.contact.linkedin }}" target="_blank">LinkedIn</a></span>
                 </div>
                 {% endif %}
-                
+
                 {% if resume_data.contact.github %}
                 <div class="contact-item">
                     <i class="fab fa-github"></i>
                     <span><a href="{{ resume_data.contact.github }}" target="_blank">GitHub</a></span>
                 </div>
                 {% endif %}
-                
+
                 {% if resume_data.contact.website %}
                 <div class="contact-item">
                     <i class="fas fa-globe"></i>
                     <span><a href="{{ resume_data.contact.website }}" target="_blank">{{ resume_data.contact.website }}</a></span>
                 </div>
                 {% endif %}
-                
+
                 {% if resume_data.contact.location %}
                 <div class="contact-item">
                     <i class="fas fa-map-marker-alt"></i>
@@ -86,28 +86,28 @@
                             <div class="strength-title">Logical approach to problem-solving</div>
                         </div>
                     </div>
-                    
+
                     <div class="strength-item">
                         <div class="strength-icon"><i class="fas fa-lightbulb"></i></div>
                         <div class="strength-text">
                             <div class="strength-title">Initiative: ability to learn new things on your own accord</div>
                         </div>
                     </div>
-                    
+
                     <div class="strength-item">
                         <div class="strength-icon"><i class="fas fa-comments"></i></div>
                         <div class="strength-text">
                             <div class="strength-title">Communication skills: can easily demystify technical jargon</div>
                         </div>
                     </div>
-                    
+
                     <div class="strength-item">
                         <div class="strength-icon"><i class="fas fa-users"></i></div>
                         <div class="strength-text">
                             <div class="strength-title">Confident at training internal & external stakeholders</div>
                         </div>
                     </div>
-                    
+
                     <div class="strength-item">
                         <div class="strength-icon"><i class="fas fa-chart-line"></i></div>
                         <div class="strength-text">
@@ -116,7 +116,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- SDKs & APIs Section (with bar graphs) -->
             <div class="section sdks-apis-sidebar">
                 <h2>SDKs & APIs</h2>
@@ -134,7 +134,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Education Section (if available) -->
             {% if resume_data.education %}
             <div class="section education-sidebar">
@@ -152,7 +152,7 @@
                 </div>
             </div>
             {% endif %}
-            
+
             <!-- Personal Projects -->
             {% if resume_data.personal_projects %}
             <div class="section projects-sidebar">
@@ -177,7 +177,7 @@
                 </div>
             </div>
             {% endif %}
-            
+
             <!-- Open Source Contributions -->
             {% if resume_data.open_source_contributions %}
             <div class="section opensource-sidebar">
@@ -234,11 +234,11 @@
                             <div class="job-meta">
                                 <div class="job-meta-row">
                                     <span class="job-dates">
-                                        <i class="far fa-calendar-alt"></i> 
+                                        <i class="far fa-calendar-alt"></i>
                                         {{ job.start_date }} - {{ job.end_date if job.end_date else "Present" }}
                                     </span>
                                     <span class="job-location">
-                                        <i class="fas fa-map-marker-alt"></i> 
+                                        <i class="fas fa-map-marker-alt"></i>
                                         {{ job.location }}
                                     </span>
                                 </div>
@@ -260,11 +260,7 @@
             <!-- Footer -->
             <div class="footer">
                 <div class="footer-left">www.joemattiello.dev</div>
-                <div class="footer-right">
-                    <span>Powered by</span>
-                    <img src="https://enhancv.com/favicon.ico" alt="Enhancv" height="16">
-                    <span>Enhancv</span>
-                </div>
+                <div class="footer-right"><a href="mailto:mail@joemattiello.com">mail@joemattiello.com</a></div>
             </div>
         </div>
     </div>

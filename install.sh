@@ -26,7 +26,20 @@ echo -e "${NC}"
 # Check if Swift is installed
 if ! command -v swift &> /dev/null; then
     echo -e "${RED}Error: Swift is not installed on your system.${NC}"
-    echo -e "Please install Swift from ${BLUE}https://swift.org/download/${NC}"
+    OS_TYPE=$(uname -s)
+    if [ "$OS_TYPE" == "Darwin" ]; then
+        echo -e "${YELLOW}On macOS, you can install Swift by installing the Xcode Command Line Tools.${NC}"
+        echo -e "${YELLOW}Try running: ${GREEN}xcode-select --install${NC}"
+        echo -e "${YELLOW}Alternatively, check for updates in System Settings > Software Update, which might prompt for Command Line Tools installation.${NC}"
+    elif [ "$OS_TYPE" == "Linux" ]; then
+        echo -e "${YELLOW}On Linux, you can install Swift using your distribution's package manager.${NC}"
+        echo -e "${YELLOW}For Debian/Ubuntu, try: ${GREEN}sudo apt update && sudo apt install swiftlang${NC}"
+        echo -e "${YELLOW}For Fedora, try: ${GREEN}sudo dnf install swift-lang${NC}"
+        echo -e "${YELLOW}For other distributions, please refer to ${GREEN}https://www.swift.org/download/${NC} for instructions.${NC}"
+    else
+        echo -e "${YELLOW}Swift installation instructions for your OS (${OS_TYPE}) are not available here.${NC}"
+        echo -e "${YELLOW}Please visit ${GREEN}https://www.swift.org/download/${NC} for instructions.${NC}"
+    fi
     exit 1
 fi
 

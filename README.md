@@ -1,3 +1,21 @@
+# Joseph Mattiello's Interactive Resume
+
+## Quick Install
+
+View my interactive resume in your terminal by running:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash
+```
+
+or
+
+```bash
+wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash
+```
+
+Requirements: Swift, Git, and a terminal that supports ncurses.
+
 # Joseph Mattiello
 
 ## 📬 Contact Information

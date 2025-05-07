@@ -2,7 +2,7 @@
 
 # Joseph Mattiello's Resume CLI Installer
 # This script installs and runs the resume CLI application
-# Usage: curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash
 
 set -e
 

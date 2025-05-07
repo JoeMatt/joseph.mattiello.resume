@@ -21,11 +21,11 @@ def generate_markdown(resume_data):
     md.append("\n## Quick Install")
     md.append("\nView my interactive resume in your terminal by running:")
     md.append("\n```bash")
-    md.append("curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash")
+    md.append("curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash")
     md.append("```")
     md.append("\nor")
     md.append("\n```bash")
-    md.append("wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/main/install.sh | bash")
+    md.append("wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash")
     md.append("```")
     md.append("\nRequirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.")
     md.append("\n") # Add an extra newline for spacing before the next section

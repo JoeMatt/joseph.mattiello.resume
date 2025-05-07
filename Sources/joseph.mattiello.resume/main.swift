@@ -478,12 +478,12 @@ func formatExperienceTab(resume: Resume) -> String {
 
 // Formats the skills tab content
 func formatSkillsTab(resume: Resume) -> String {
-    var content = "\n  TECHNICAL SKILLS\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
+    var content = "  TECHNICAL SKILLS\n"
+    content += "  " + String(repeating: "─", count: 30) + "\n"
     
     // Programming Languages section
     content += "  PROGRAMMING LANGUAGES\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
+    content += "  " + String(repeating: "─", count: 30) + "\n"
     
     // Sort languages by rating (descending) and then alphabetically
     let sortedLanguages = resume.skills.programmingLanguages
@@ -503,7 +503,7 @@ func formatSkillsTab(resume: Resume) -> String {
     
     // SDKs & APIs section
     content += "  SDKs & APIs\n"
-    content += "  " + String(repeating: "─", count: 30) + "\n\n"
+    content += "  " + String(repeating: "─", count: 30) + "\n"
     
     // Sort SDKs/APIs by rating (descending) and then alphabetically
     let sortedSDKs = resume.skills.sdksApis

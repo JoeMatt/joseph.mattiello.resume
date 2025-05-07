@@ -16,9 +16,9 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .systemLibrary(
             name: "Cncurses",
-            pkgConfig: "ncurses",
+            pkgConfig: "ncursesw", // Changed from ncurses to ncursesw
             providers: [
-                .brew(["ncurses"]),
+                .brew(["ncurses"]), // The brew package is still ncurses, it provides ncursesw
                 .apt(["libncurses-dev"])
             ]
         ),

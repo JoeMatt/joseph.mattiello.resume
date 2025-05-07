@@ -13,6 +13,11 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     // You might need to define other A_* attributes (A_NORMAL, A_REVERSE, etc.) if used
     // let A_NORMAL: Int32 = 0 
 
+    // Helper function to convert Swift String to null-terminated wchar_t array
+    func swiftStringToWcharTArray(_ str: String) -> [wchar_t] {
+        return str.unicodeScalars.map { wchar_t($0.value) } + [0] // Null-terminate
+    }
+
     guard let mainScreen = initscr() else {
         // Or throw a custom error if the function signature remains 'throws'
         print("Error: Could not initialize ncurses screen (initscr failed).")
@@ -65,7 +70,10 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     let headerWin: OpaquePointer? = newwin(3, maxX, 0, 0)
 
     let contentWin: OpaquePointer? = newwin(maxY - 4, maxX, 3, 0)
-    if let win = contentWin { scrollok(win, true) } // Enable scrolling for contentWin
+    if let win = contentWin { 
+        scrollok(win, true) // Enable scrolling for contentWin
+        box(win, 0, 0)      // Draw a box around contentWin using default ACS characters
+    }
 
     let footerWin: OpaquePointer? = newwin(1, maxX, maxY - 1, 0)
         
@@ -83,8 +91,9 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
     func drawHeader() {
         guard let headerWin = headerWin else { return }
         wclear(headerWin)
-        wattron(headerWin, COLOR_PAIR(1) | A_BOLD)
-        mvwaddstr(headerWin, 0, 0, "Joseph Mattiello's Resume")
+        wattron(headerWin, COLOR_PAIR(1) | A_BOLD) // Set attributes for the window
+
+        mvwaddwstr(headerWin, 0, 0, swiftStringToWcharTArray("Joseph Mattiello's Resume"))
         wattroff(headerWin, COLOR_PAIR(1) | A_BOLD)
         
         // Draw tabs
@@ -95,7 +104,7 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
             let colorPairID = Int32(selected ? 2 : 3)
             
             wattron(headerWin, COLOR_PAIR(colorPairID))
-            mvwaddstr(headerWin, 2, xPos, " \(tab) ")
+            mvwaddwstr(headerWin, 2, xPos, swiftStringToWcharTArray(" \(tab) "))
             wattroff(headerWin, COLOR_PAIR(colorPairID))
             
             xPos += tabWidth
@@ -109,7 +118,8 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         guard let footerWin = footerWin else { return }
         wclear(footerWin)
         wattron(footerWin, COLOR_PAIR(1))
-        mvwaddstr(footerWin, 0, 0, "TAB: Switch tabs | UP/DOWN: Scroll | Q: Quit")
+        wmove(footerWin, 0, (maxX - Int32("TAB: Switch tabs | UP/DOWN: Scroll | Q: Quit".count)) / 2)
+        waddstr(footerWin, swiftStringToWcharTArray("TAB: Switch tabs | UP/DOWN: Scroll | Q: Quit"))
         wattroff(footerWin, COLOR_PAIR(1))
         wrefresh(footerWin)
     }
@@ -157,25 +167,25 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
                    line.contains("PERSONAL PROJECTS") || 
                    line.contains("OPEN SOURCE CONTRIBUTIONS") {
                     wattron(contentWin, COLOR_PAIR(4) | A_BOLD)
-                    mvwaddstr(contentWin, i32, 0, line)
+                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
                     wattroff(contentWin, COLOR_PAIR(4) | A_BOLD)
                 } else if line.contains("at ") && line.contains("Present") {
                     // Job titles
                     wattron(contentWin, COLOR_PAIR(5))
-                    mvwaddstr(contentWin, i32, 0, line)
+                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
                     wattroff(contentWin, COLOR_PAIR(5))
                 } else if line.contains("•") {
                     // List items
                     wattron(contentWin, COLOR_PAIR(6))
-                    mvwaddstr(contentWin, i32, 0, line)
+                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
                     wattroff(contentWin, COLOR_PAIR(6))
                 } else if line.contains("[█") {
                     // Skill bars
                     wattron(contentWin, A_BOLD)
-                    mvwaddstr(contentWin, i32, 0, line)
+                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
                     wattroff(contentWin, A_BOLD)
                 } else {
-                    mvwaddstr(contentWin, i32, 0, line)
+                    mvwaddwstr(contentWin, i32, 0, swiftStringToWcharTArray(line))
                 }
             }
         }
@@ -183,18 +193,36 @@ func runResumeTUI(resume: Resume) throws { // Keeping throws for now, as later p
         wrefresh(contentWin)
     }
     
-    // Main loop
-    var running = true
-    drawHeader()
-    drawFooter()
-    displayContent()
+    // Function to refresh all windows
+    func refreshAll() {
+        if let win = headerWin { wclear(win) }
+        if let win = contentWin { 
+            wclear(win) 
+            box(win, 0, 0) 
+        }
+        if let win = footerWin { wclear(win) }
+
+        drawHeader()
+        displayContent()
+        drawFooter()
+
+        wnoutrefresh(mainScreen) // Prepare stdscr for refresh (if it has its own direct drawing beyond sub-windows)
+        if let win = headerWin { wnoutrefresh(win) }
+        if let win = contentWin { wnoutrefresh(win) }
+        if let win = footerWin { wnoutrefresh(win) }
+        doupdate() // Perform actual refresh of all prepared windows simultaneously
+    }
     
-    while running {
-        let keyPress = getch()
+    // Initial display
+    refreshAll()
+
+    // Main input loop
+    while true {
+        let ch = getch()
         
-        switch keyPress {
+        switch ch {
         case 113, 81: // 'q' or 'Q'
-            running = false
+            return
         case 9: // '\t'
             // Switch to next tab
             currentTabIndex = (currentTabIndex + 1) % tabs.count

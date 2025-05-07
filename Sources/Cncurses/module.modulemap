@@ -1,5 +1,5 @@
 module Cncurses {
-  header "/opt/homebrew/Cellar/ncurses/6.5/include/ncurses.h"
+  header "shim.h" // Use the local shim header
   link "ncursesw"
   export *
 }

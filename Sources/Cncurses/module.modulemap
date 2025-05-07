@@ -1,0 +1,5 @@
+module Cncurses {
+  header "/opt/homebrew/Cellar/ncurses/6.5/include/ncurses.h"
+  link "ncursesw"
+  export *
+}

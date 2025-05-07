@@ -113,7 +113,7 @@ experience:
       - https://venturebeat.com/business/cabsense-finds-available-taxis/
     responsibilities:
       - Designed and developed Citysense for iPhone pre-official SDK, leveraging API hacking expertise. Managed full codebase and design. Named on patents for contributions to backend data analysis systems. Featured on GigaOM & NY Times.
-      - Assumed role of network and security engineer, establishing office/colo infrastructure: intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics.
+      - "Assumed role of network and security engineer, establishing office/colo infrastructure: intranet, firewalls, VPN, file/printer sharing, OS X Collaboration services (iCal, Address Book, WIKI). Built, tested, and deployed Hadoop systems for analytics."
       - As a software engineer, created utilities for managing large datasets and authored significant patches for GNUstep's PBXBuild tool (XCode to GNUstep Makefile conversion), becoming an official FSF/GNU project developer.
       - Developed CabSense for iPhone, contributing to design and development with the Android team. Created pre-rendered assets and the Quartz 'Radar' view. Ensured secure server/client communication. Created reusable C/Cocoa libraries for third-party CabSense data interaction. Featured on VentureBeat, ZDNet, NY Times.
   - company: People Security
@@ -204,7 +204,7 @@ open_source_contributions:
     links:
     - title: Project Link
       url: https://getutm.app/
-    - title: PR #3055
+    - title: "PR #3055"
       url: https://github.com/utmapp/UTM/pull/3055
   - name: retroarch
     description: Contributed multiple pull requests, including fixes and improvements.
@@ -212,11 +212,11 @@ open_source_contributions:
     links:
     - title: Project Link
       url: https://www.retroarch.com/
-    - title: PR #17590
+    - title: "PR #17590"
       url: https://github.com/libretro/RetroArch/pull/17590
-    - title: PR #17591
+    - title: "PR #17591"
       url: https://github.com/libretro/RetroArch/pull/17591
-    - title: PR #17569
+    - title: "PR #17569"
       url: https://github.com/libretro/RetroArch/pull/17569
   - name: reicast
     description: Contributed UIKit UI to reicast, a popular emulator for the Sega Dreamcast.
@@ -238,9 +238,9 @@ open_source_contributions:
     links:
     - title: Project Link
       url: https://github.com/MaxDesiatov/XMLCoder/
-    - title: PR #73 (Attributed Intrinsic Value Coding)
+    - title: "PR #73 (Attributed Intrinsic Value Coding)"
       url: https://github.com/CoreOffice/XMLCoder/pull/73
-    - title: PR #70 (Dynamic Node Encoding & Fixes)
+    - title: "PR #70 (Dynamic Node Encoding & Fixes)"
       url: https://github.com/CoreOffice/XMLCoder/pull/70
   - name: GLideN64
     description: Contributed to GLideN64, an open-source graphics plugin for N64 emulators.
@@ -254,7 +254,7 @@ open_source_contributions:
     links:
     - title: Project Repository
       url: https://github.com/nythepegasus/SideJITServer
-    - title: Pull Request #150
+    - title: "Pull Request #150"
       url: https://github.com/nythepegasus/SideJITServer/pull/150
   - name: Mono
     description: Authored C# wrappers by hand for CoreMIDI, CoreAudio, and other Apple Foundation frameworks for MonoMac (now part of Xamarin/MAUI), including key contributions merged via pull requests.
@@ -262,25 +262,25 @@ open_source_contributions:
     links:
     - title: Project Link
       url: https://www.mono-project.com/
-    - title: MonoMac PR #20 (CoreAudio, CoreMIDI)
+    - title: "MonoMac PR #20 (CoreAudio, CoreMIDI)"
       url: https://github.com/mono/monomac/pull/20
-    - title: MonoMac PR #4 (AppKit, Foundation, etc.)
+    - title: "MonoMac PR #4 (AppKit, Foundation, etc.)"
       url: https://github.com/mono/monomac/pull/4
   - name: MultiPatch
-    description: Submitted a pull request (PR #19) to MultiPatch, a versatile ROM patching tool, with proposed enhancements/fixes. (Pending Merge)
+    description: "Submitted a pull request (PR #19) to MultiPatch, a versatile ROM patching tool, with proposed enhancements/fixes. (Pending Merge)"
     app_store_link: ""
     links:
     - title: Project Repository
       url: https://github.com/Sappharad/MultiPatch
-    - title: PR #19
+    - title: "PR #19"
       url: https://github.com/Sappharad/MultiPatch/pull/19
   - name: OSSSpeechKit
-    description: Added Swift Package Manager (SwiftPM) support to OSSSpeechKit, enabling easier integration for iOS, tvOS, and macCatalyst projects (PR #34).
+    description: "Added Swift Package Manager (SwiftPM) support to OSSSpeechKit, enabling easier integration for iOS, tvOS, and macCatalyst projects (PR #34)."
     app_store_link: ""
     links:
     - title: Project Repository
       url: https://github.com/AppDevGuy/OSSSpeechKit
-    - title: PR #34 (SwiftPM Support)
+    - title: "PR #34 (SwiftPM Support)"
       url: https://github.com/AppDevGuy/OSSSpeechKit/pull/34
   - name: sReto
     description: Contributed to sReto, a P2P framework for real-time collaboration in Swift.
@@ -300,7 +300,7 @@ open_source_contributions:
     links:
     - title: Project Link
       url: https://github.com/jpd002/Play--Framework
-    - title: PR #44
+    - title: "PR #44"
       url: https://github.com/jpd002/Play--Framework/pull/44
   - name: EGYWebViewController
     description: Contributed to EGYWebViewController, an in-app browser component for iOS.
@@ -315,20 +315,20 @@ open_source_contributions:
       - title: Project Link
         url: https://github.com/libretro/virtualjaguar-libretro
   - name: PokeMini
-    description: Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR #17).
+    description: "Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR #17)."
     app_store_link: ""
     links:
       - title: Project Link
         url: https://github.com/libretro/PokeMini
-      - title: PR #17 (Buffer Overflow Fix)
+      - title: "PR #17 (Buffer Overflow Fix)"
         url: https://github.com/libretro/PokeMini/pull/17
   - name: OBD2Connect
-    description: Added Swift Package Manager (SwiftPM) support, GitHub Actions validation, and addressed deprecations for OBD2Connect, a Swift library for OBD-II communication (PR #4).
+    description: "Added Swift Package Manager (SwiftPM) support, GitHub Actions validation, and addressed deprecations for OBD2Connect, a Swift library for OBD-II communication (PR #4)."
     app_store_link: ""
     links:
       - title: Project Repository
         url: https://github.com/Wisors/OBD2Connect
-      - title: PR #4 (SwiftPM Support & Enhancements)
+      - title: "PR #4 (SwiftPM Support & Enhancements)"
         url: https://github.com/Wisors/OBD2Connect/pull/4
   - name: PINCache.Swift (Fork)
     description: Maintained a fork of PINCache.Swift, a fast, non-deadlocking parallel object cache for iOS, tvOS and macOS.

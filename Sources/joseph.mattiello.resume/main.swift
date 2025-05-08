@@ -31,9 +31,9 @@ struct ResumeTUI {
         var currentSearchTerm: String = ""
         var activeSearchTerm: String = "" // The term actually being searched for
         // For later: storing search results
-        var searchMatches: [SearchMatch] = []
-        var currentSearchMatchIndex: Int = -1 // -1 means no match selected/active
-        var totalContentLines: Int = 1 // Add this line
+        var searchMatchSegmentIndices: [Int] = [] // NEW: Indices of segments matching activeSearchTerm
+        var currentSearchMatchSegmentIndex: Int = -1 // NEW: Index into searchMatchSegmentIndices
+        var totalContentLines: Int = 1
 
         func appendToDebugLog(_ message: String) {
             debugLog.append(message)
@@ -439,14 +439,43 @@ struct ResumeTUI {
                     case 10, 13, KEY_ENTER: // Enter key (10 for LF, 13 for CR)
                         tuiState.activeSearchTerm = tuiState.currentSearchTerm
                         tuiState.isSearching = false
-                        performSearch() // Perform the search
+                        // Populate searchMatchSegmentIndices based on the activeSearchTerm and current tab content
+                        tuiState.searchMatchSegmentIndices = []
+                        if !tuiState.activeSearchTerm.isEmpty {
+                            let contentForTab: [(String, Int32)]
+                            switch tuiState.currentTabIndex {
+                                case 0: contentForTab = formatOverviewTab(resume: tuiState.resume)
+                                case 1: contentForTab = formatExperienceTab(resume: tuiState.resume)
+                                case 2: contentForTab = formatSkillsTab(resume: tuiState.resume)
+                                case 3: contentForTab = formatProjectsTab(resume: tuiState.resume)
+                                case 4: contentForTab = formatContributionsTab(resume: tuiState.resume)
+                                default: contentForTab = []
+                            }
+
+                            for (index, segment) in contentForTab.enumerated() {
+                                if segment.0.localizedCaseInsensitiveContains(tuiState.activeSearchTerm) {
+                                    tuiState.searchMatchSegmentIndices.append(index)
+                                }
+                            }
+                        }
+
+                        if !tuiState.searchMatchSegmentIndices.isEmpty {
+                            tuiState.currentSearchMatchSegmentIndex = 0
+                            // Scroll to the first segment containing the match.
+                            // The displayContent function uses scrollPosition as an offset into the segments.
+                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[0]
+                            tuiState.appendToDebugLog("Found \(tuiState.searchMatchSegmentIndices.count) matches for '\(tuiState.activeSearchTerm)'. First match selected at segment \(tuiState.scrollPosition).")
+                        } else {
+                            tuiState.currentSearchMatchSegmentIndex = -1
+                            tuiState.appendToDebugLog("No matches found for '\(tuiState.activeSearchTerm)'.")
+                        }
                         needsRedraw = true
-                        tuiState.appendToDebugLog("Search submitted: \(tuiState.activeSearchTerm)")
-                        // Future: Trigger actual search logic here and update displayContent
                     case 27: // Escape key
                         tuiState.isSearching = false
                         tuiState.currentSearchTerm = ""
                         tuiState.activeSearchTerm = ""
+                        tuiState.searchMatchSegmentIndices = []
+                        tuiState.currentSearchMatchSegmentIndex = -1
                         needsRedraw = true
                     case KEY_BACKSPACE, 127, 8: // Backspace (127 for some terminals, 8 for others)
                         if !tuiState.currentSearchTerm.isEmpty {
@@ -493,9 +522,29 @@ struct ResumeTUI {
                         tuiState.currentSearchTerm = ""
                         tuiState.activeSearchTerm = ""
                         // Clear previous search results if any (when implemented)
-                        // tuiState.searchMatches = []
-                        // tuiState.currentSearchMatchIndex = 0
+                        // tuiState.searchMatchSegmentIndices = []
+                        // tuiState.currentSearchMatchSegmentIndex = 0
                         needsRedraw = true
+                    case Int32(Character("n").asciiValue!): // Next search result
+                        if !tuiState.activeSearchTerm.isEmpty && !tuiState.searchMatchSegmentIndices.isEmpty {
+                            tuiState.currentSearchMatchSegmentIndex += 1
+                            if tuiState.currentSearchMatchSegmentIndex >= tuiState.searchMatchSegmentIndices.count {
+                                tuiState.currentSearchMatchSegmentIndex = 0 // Wrap around
+                            }
+                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
+                            // tuiState.appendToDebugLog("Next match: index \(tuiState.currentSearchMatchSegmentIndex), segment \(tuiState.scrollPosition)")
+                            needsRedraw = true
+                        }
+                    case Int32(Character("N").asciiValue!), Int32(Character("p").asciiValue!): // Previous search result
+                        if !tuiState.activeSearchTerm.isEmpty && !tuiState.searchMatchSegmentIndices.isEmpty {
+                            tuiState.currentSearchMatchSegmentIndex -= 1
+                            if tuiState.currentSearchMatchSegmentIndex < 0 {
+                                tuiState.currentSearchMatchSegmentIndex = tuiState.searchMatchSegmentIndices.count - 1 // Wrap around
+                            }
+                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
+                            // tuiState.appendToDebugLog("Previous match: index \(tuiState.currentSearchMatchSegmentIndex), segment \(tuiState.scrollPosition)")
+                            needsRedraw = true
+                        }
                     default:
                         break // Ignore other keys
                 }
@@ -512,71 +561,8 @@ struct ResumeTUI {
     // MARK: - Search Logic
     @MainActor
     static func performSearch() {
-        tuiState.searchMatches.removeAll()
-        tuiState.currentSearchMatchIndex = -1
-
-        guard !tuiState.activeSearchTerm.isEmpty, let resume = tuiState.resume else {
-            return
-        }
-
-        let searchTerm = tuiState.activeSearchTerm
-        let searchTermLowercased = searchTerm.lowercased()
-
-        for tabIndex in 0..<TAB_NAMES.count {
-            var rawContentLines: [String] = []
-
-            switch tabIndex {
-                case 0: // Overview
-                    rawContentLines = ResumeTUI.getRawOverviewLines(resume: resume)
-                case 1: // Experience
-                    rawContentLines = ResumeTUI.getRawExperienceLines(resume: resume)
-                case 2: // Skills
-                    rawContentLines = ResumeTUI.getRawSkillsLines(resume: resume)
-                case 3: // Projects
-                    rawContentLines = ResumeTUI.getRawProjectsLines(resume: resume)
-                case 4: // Contributions
-                    rawContentLines = ResumeTUI.getRawContributionsLines(resume: resume)
-                default:
-                    break
-            }
-
-            // ... (the rest of the function for finding matches remains the same) ...
-            for (lineIndex, originalLine) in rawContentLines.enumerated() {
-                var searchStartIndex = originalLine.startIndex
-                let originalLineLowercased = originalLine.lowercased()
-
-                while searchStartIndex < originalLine.endIndex,
-                      let rangeInLowercasedLine = originalLineLowercased.range(of: searchTermLowercased, options: .caseInsensitive, range: searchStartIndex..<originalLine.endIndex) {
-
-                    guard let actualRangeInOriginalLine = originalLine.range(of: searchTerm, options: .caseInsensitive, range: rangeInLowercasedLine) else {
-                        let nsRange = NSRange(rangeInLowercasedLine, in: originalLineLowercased)
-                        if let swiftRange = Range(nsRange, in: originalLine) {
-                             let match = SearchMatch(tabIndex: tabIndex,
-                                                    originalLineIndex: lineIndex,
-                                                    rangeInLine: swiftRange,
-                                                    matchedLineText: originalLine)
-                            tuiState.searchMatches.append(match)
-                        }
-                        searchStartIndex = rangeInLowercasedLine.upperBound
-                        continue
-                    }
-
-                    let match = SearchMatch(tabIndex: tabIndex,
-                                            originalLineIndex: lineIndex,
-                                            rangeInLine: actualRangeInOriginalLine,
-                                            matchedLineText: originalLine)
-                    tuiState.searchMatches.append(match)
-                    searchStartIndex = actualRangeInOriginalLine.upperBound
-                }
-            }
-        }
-
-        if !tuiState.searchMatches.isEmpty {
-            tuiState.currentSearchMatchIndex = 0
-            tuiState.appendToDebugLog("Found \(tuiState.searchMatches.count) matches for '\(searchTerm)'. First match selected.")
-        } else {
-            tuiState.appendToDebugLog("No matches found for '\(searchTerm)'.")
-        }
+        // This function is currently not used, but it's kept for potential future use
+        // with more complex search logic.
     }
 
     // MARK: - Text Highlighting Helper

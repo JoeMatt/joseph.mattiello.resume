@@ -73,10 +73,33 @@ jobs:
         shell: bash
 
       - name: Build Universal Swift application
+        env:
+          TOOLCHAIN_PATH_ENV: ${{ steps.swift_vars.outputs.TOOLCHAIN_PATH }} # Pass toolchain path as env for clarity
         run: |
           echo "PATH is: $PATH"
-          echo "Swift version for build: $(swift --version)"
-          swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+          echo "which swift (should be from our toolchain): $(which swift)"
+          echo "Swift version for build (should be 6.1): $(swift --version)"
+          
+          # Explicitly set toolchain and developer directory for the build process
+          export TOOLCHAINS=$(basename "$TOOLCHAIN_PATH_ENV" .xctoolchain)
+          export DEVELOPER_DIR="$TOOLCHAIN_PATH_ENV"
+          
+          echo "TOOLCHAINS set to: $TOOLCHAINS"
+          echo "DEVELOPER_DIR set to: $DEVELOPER_DIR"
+
+          # Verify swift location and version again after setting critical env vars
+          echo "which swift (after env vars): $(which swift)"
+          echo "Swift version (after env vars): $(swift --version)"
+
+          echo "Listing project root contents:"
+          ls -lav
+          echo "Listing Resources directory contents:"
+          ls -lav Resources/
+          echo "Listing Sources/joseph.mattiello.resume contents:"
+          ls -lav Sources/joseph.mattiello.resume/
+
+          echo "Attempting verbose build..."
+          swift build -v -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
 
       - name: Prepare Swift App Artifact
         id: swift_artifact_prep

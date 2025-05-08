@@ -33,6 +33,7 @@ struct ResumeTUI {
         // For later: storing search results
         var searchMatches: [SearchMatch] = []
         var currentSearchMatchIndex: Int = -1 // -1 means no match selected/active
+        var totalContentLines: Int = 1 // Add this line
 
         func appendToDebugLog(_ message: String) {
             debugLog.append(message)
@@ -340,80 +341,62 @@ struct ResumeTUI {
     @MainActor
     static func displayContent() { // Removed parameters, will use tuiState directly
         guard let contentWin = tuiState.contentWin else { return }
-        wclear(contentWin)
+        werase(contentWin)
 
-        let attributedFormattedContent: [(String, Int32)]
+        var ncursesY: Int32 = 0
+        var ncursesX: Int32 = 0 // Keep track of X for potential future use, though not strictly needed now
+        wmove(contentWin, ncursesY, ncursesX) // Start at (0,0) of the content window
+
+        let attributedSegmentedContent: [(String, Int32)]
         switch tuiState.currentTabIndex {
-            case 0:
-                attributedFormattedContent = ResumeTUI.formatOverviewTab(resume: tuiState.resume)
-            case 1:
-                attributedFormattedContent = ResumeTUI.formatExperienceTab(resume: tuiState.resume)
-            case 2:
-                attributedFormattedContent = ResumeTUI.formatSkillsTab(resume: tuiState.resume)
-            case 3:
-                attributedFormattedContent = ResumeTUI.formatProjectsTab(resume: tuiState.resume)
-            case 4:
-                attributedFormattedContent = ResumeTUI.formatContributionsTab(resume: tuiState.resume)
+            case 0: attributedSegmentedContent = formatOverviewTab(resume: tuiState.resume)
+            case 1: attributedSegmentedContent = formatExperienceTab(resume: tuiState.resume)
+            case 2: attributedSegmentedContent = formatSkillsTab(resume: tuiState.resume)
+            case 3: attributedSegmentedContent = formatProjectsTab(resume: tuiState.resume)
+            case 4: attributedSegmentedContent = formatContributionsTab(resume: tuiState.resume)
             default:
-                attributedFormattedContent = [("Unknown tab", Cncurses.COLOR_PAIR(1))]
+                attributedSegmentedContent = [("Unknown tab", Cncurses.COLOR_PAIR(1))]
         }
 
-        var currentY = 1 // Start drawing from the second line, leaving space for top border/padding
-        // let contentWidth = getmaxx(contentWin) - 2 // -2 for side borders or padding -> This was unused
-
-        // Calculate total lines in content to determine max scroll
-        var totalContentLines = 0
-        for (text, _) in attributedFormattedContent {
-            // This is a simplification. A more accurate line count would consider text wrapping.
-            // For now, counting newlines in the pre-formatted string segments.
-            totalContentLines += text.components(separatedBy: "\n").count - 1
-        }
-        // Ensure totalContentLines is at least 1 if there's any content, to avoid division by zero or negative maxScroll
-        totalContentLines = max(1, totalContentLines)
-
-        // Content window height, adjusted for border/padding
-        let contentWinHeight = getmaxy(contentWin) - 2
-
-        // Adjust scrollPosition if it's out of bounds
-        let maxScroll = max(0, totalContentLines - Int(contentWinHeight))
-        if tuiState.scrollPosition > maxScroll {
-            tuiState.scrollPosition = maxScroll
-        }
-        if tuiState.scrollPosition < 0 {
-            tuiState.scrollPosition = 0
-        }
-
-        // Apply scrolling: Skip lines based on scrollPosition
-        let linesToSkip = tuiState.scrollPosition // Changed to let as it's not mutated
-        var linesSkipped = 0
-
-        for (text, attr) in attributedFormattedContent {
-            let lines = text.components(separatedBy: "\n")
-            for (idx, lineContent) in lines.enumerated() {
-                if linesSkipped < linesToSkip {
-                    linesSkipped += 1
-                    continue // Skip this line
-                }
-
-                if currentY >= contentWinHeight { // Stop if we've filled the visible part of the window
-                    break
-                }
-
-                wattron(contentWin, attr)
-                _ = lineContent.withCString { mvwaddstr(contentWin, Int32(currentY), 1, $0) } // Start from X=1 for padding
-                wattroff(contentWin, attr)
-                currentY += 1
-
-                if idx < lines.count - 1 { // If it's not the last segment of a multi-line string from one (text,attr) pair
-                     // This ensures that if a single `text` has newlines, currentY is incremented for each actual line displayed
-                }
+        // Calculate total logical lines for scrolling (approximation based on newlines)
+        // This might need refinement if a single segment can be exceptionally long and wraps without a newline.
+        var logicalLineCount = 0
+        for (text, _) in attributedSegmentedContent {
+            logicalLineCount += text.components(separatedBy: "\n").count - (text.hasSuffix("\n") ? 0 : 1)
+            if text.isEmpty && attributedSegmentedContent.count == 1 { // Handle case of single empty segment
+                 logicalLineCount = 1
             }
-            if currentY >= contentWinHeight {
+        }
+        if attributedSegmentedContent.last?.0.hasSuffix("\n") == true && logicalLineCount > 0 {
+            // If the very last segment ends with a newline, it forms its own line or ends one.
+            // The previous logic might undercount by one in some edge cases with trailing newlines.
+            // A simple fix for now, might need more robust line counting if scrolling issues persist.
+        } else if !attributedSegmentedContent.isEmpty && logicalLineCount == 0 {
+             logicalLineCount = 1 // Ensure at least one line if there's content but no newlines
+        }
+
+        tuiState.totalContentLines = logicalLineCount > 0 ? logicalLineCount : 1
+
+        let contentWinHeight = getmaxy(contentWin) // Max Y of the window (number of rows)
+
+        // Iterate through the attributed segments, starting from the scroll position
+        // Note: tuiState.scrollPosition here refers to an *index* in the attributedSegmentedContent array,
+        // not necessarily a logical line number. This will be refined for smoother scrolling later.
+        for i in tuiState.scrollPosition..<attributedSegmentedContent.count {
+            if ncursesY >= contentWinHeight { // Stop if we've filled the visible part of the window
                 break
             }
+
+            let (textSegment, attr) = attributedSegmentedContent[i]
+
+            wattron(contentWin, attr)
+            waddstr(contentWin, textSegment) // ncurses handles newlines within textSegment
+            wattroff(contentWin, attr)
+
+            ncursesY = getcury(contentWin) // New line
+            ncursesX = getcurx(contentWin) // New line
         }
 
-        box(contentWin, 0, 0) // Redraw box after clearing and writing content
         wrefresh(contentWin)
     }
 

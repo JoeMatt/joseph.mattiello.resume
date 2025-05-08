@@ -461,10 +461,10 @@ struct ResumeTUI {
 
                         if !tuiState.searchMatchSegmentIndices.isEmpty {
                             tuiState.currentSearchMatchSegmentIndex = 0
-                            // Scroll to the first segment containing the match.
-                            // The displayContent function uses scrollPosition as an offset into the segments.
-                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[0]
-                            tuiState.appendToDebugLog("Found \(tuiState.searchMatchSegmentIndices.count) matches for '\(tuiState.activeSearchTerm)'. First match selected at segment \(tuiState.scrollPosition).")
+                            let targetSegmentIndex = tuiState.searchMatchSegmentIndices[0]
+                            let desiredContextSegments = 2 // Show 2 segments before the match if possible
+                            tuiState.scrollPosition = max(0, targetSegmentIndex - desiredContextSegments)
+                            tuiState.appendToDebugLog("Found \(tuiState.searchMatchSegmentIndices.count) matches for '\(tuiState.activeSearchTerm)'. First match at segment \(targetSegmentIndex), scrolling to \(tuiState.scrollPosition).")
                         } else {
                             tuiState.currentSearchMatchSegmentIndex = -1
                             tuiState.appendToDebugLog("No matches found for '\(tuiState.activeSearchTerm)'.")
@@ -531,8 +531,10 @@ struct ResumeTUI {
                             if tuiState.currentSearchMatchSegmentIndex >= tuiState.searchMatchSegmentIndices.count {
                                 tuiState.currentSearchMatchSegmentIndex = 0 // Wrap around
                             }
-                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
-                            // tuiState.appendToDebugLog("Next match: index \(tuiState.currentSearchMatchSegmentIndex), segment \(tuiState.scrollPosition)")
+                            let targetSegmentIndex = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
+                            let desiredContextSegments = 2
+                            tuiState.scrollPosition = max(0, targetSegmentIndex - desiredContextSegments)
+                            tuiState.appendToDebugLog("Next match: index \(tuiState.currentSearchMatchSegmentIndex), target segment \(targetSegmentIndex), scrolling to \(tuiState.scrollPosition)")
                             needsRedraw = true
                         }
                     case Int32(Character("N").asciiValue!), Int32(Character("p").asciiValue!): // Previous search result
@@ -541,8 +543,10 @@ struct ResumeTUI {
                             if tuiState.currentSearchMatchSegmentIndex < 0 {
                                 tuiState.currentSearchMatchSegmentIndex = tuiState.searchMatchSegmentIndices.count - 1 // Wrap around
                             }
-                            tuiState.scrollPosition = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
-                            // tuiState.appendToDebugLog("Previous match: index \(tuiState.currentSearchMatchSegmentIndex), segment \(tuiState.scrollPosition)")
+                            let targetSegmentIndex = tuiState.searchMatchSegmentIndices[tuiState.currentSearchMatchSegmentIndex]
+                            let desiredContextSegments = 2
+                            tuiState.scrollPosition = max(0, targetSegmentIndex - desiredContextSegments)
+                            tuiState.appendToDebugLog("Previous match: index \(tuiState.currentSearchMatchSegmentIndex), target segment \(targetSegmentIndex), scrolling to \(tuiState.scrollPosition)")
                             needsRedraw = true
                         }
                     default:

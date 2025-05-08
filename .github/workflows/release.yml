@@ -80,12 +80,12 @@ jobs:
           echo "which swift (should be from our toolchain): $(which swift)"
           echo "Swift version for build (should be 6.1): $(swift --version)"
           
-          # Explicitly set toolchain and developer directory for the build process
+          # Explicitly set toolchain for the build process
           export TOOLCHAINS=$(basename "$TOOLCHAIN_PATH_ENV" .xctoolchain)
-          export DEVELOPER_DIR="$TOOLCHAIN_PATH_ENV"
+          # DO NOT set DEVELOPER_DIR to the toolchain path, as it breaks xcrun
           
           echo "TOOLCHAINS set to: $TOOLCHAINS"
-          echo "DEVELOPER_DIR set to: $DEVELOPER_DIR"
+          echo "Current DEVELOPER_DIR (should be system default Xcode): $(xcode-select -p)"
 
           # Verify swift location and version again after setting critical env vars
           echo "which swift (after env vars): $(which swift)"

@@ -26,7 +26,7 @@ jobs:
           TOOLCHAIN_PATH="/Library/Developer/Toolchains/${TOOLCHAIN_NAME}"
           echo "TOOLCHAIN_PATH=${TOOLCHAIN_PATH}" >> "$GITHUB_OUTPUT"
           echo "TOOLCHAIN_BIN_PATH=${TOOLCHAIN_PATH}/usr/bin" >> "$GITHUB_OUTPUT"
-          
+
           # Use a unique part of the URL for the cache key
           CACHE_IDENTIFIER="swift-6-1-release"
           echo "CACHE_KEY_PKG=swift-pkg-${CACHE_IDENTIFIER}" >> "$GITHUB_OUTPUT"
@@ -61,7 +61,7 @@ jobs:
 
           echo "Inspecting contents of selected toolchain directory: ${TOOLCHAIN_PATH}"
           sudo ls -lR "${TOOLCHAIN_PATH}" > toolchain_contents.txt || echo "Toolchain directory listing failed"
-          
+
           echo "Verifying Swift version directly from toolchain path: ${TOOLCHAIN_BIN_PATH}/swift"
           "${TOOLCHAIN_BIN_PATH}/swift" --version
         shell: bash
@@ -83,11 +83,11 @@ jobs:
           echo "PATH is: $PATH"
           echo "which swift (should be from our toolchain): $(which swift)"
           echo "Swift version for build (should be 6.1): $(swift --version)"
-          
+
           # Explicitly set toolchain for the build process
           export TOOLCHAINS=$(basename "$TOOLCHAIN_PATH_ENV" .xctoolchain)
           # DO NOT set DEVELOPER_DIR to the toolchain path, as it breaks xcrun
-          
+
           echo "TOOLCHAINS set to: $TOOLCHAINS"
           echo "Current DEVELOPER_DIR (should be system default Xcode): $(xcode-select -p)"
 
@@ -106,25 +106,49 @@ jobs:
           # Clean previous build artifacts
           swift package clean
           rm -rf .build # Ensure .build is completely gone
-          
+
           # Get SDK path
           SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
           echo "Using SDK Path: $SDK_PATH"
-          
+
           # Explicitly set the Swift language version for the build system
           export SWIFT_VERSION=6.0
           echo "SWIFT_VERSION explicitly set to: $SWIFT_VERSION"
-          
-          swift build -v -c release --product joseph.mattiello.resume --arch arm64 --sdk "$SDK_PATH"
+
+          swift build -c release --product joseph.mattiello.resume --arch arm64 --sdk "$SDK_PATH"
 
       - name: Prepare Swift App Artifact
         if: success()
         run: |
-          EXECUTABLE_PATH=".build/apple/Products/Release/joseph.mattiello.resume"
-          ARCHIVE_NAME="joseph.mattiello.resume-macos-universal.tar.gz"
-          cd "$(dirname "$EXECUTABLE_PATH")"
-          tar -czvf "${ARCHIVE_NAME}" "$(basename "$EXECUTABLE_PATH")"
-          echo "archive_path=$(pwd)/${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+          EXECUTABLE_NAME="joseph.mattiello.resume"
+          # Swift build --arch arm64 places output in .build/arm64-apple-macosx/release/
+          EXECUTABLE_DIR=".build/arm64-apple-macosx/release"
+          EXECUTABLE_PATH="${EXECUTABLE_DIR}/${EXECUTABLE_NAME}"
+          
+          echo "Expected executable path: ${EXECUTABLE_PATH}"
+          if [ ! -f "${EXECUTABLE_PATH}" ]; then
+            echo "Error: Executable not found at ${EXECUTABLE_PATH}"
+            echo "Listing contents of .build directory:"
+            ls -lR .build
+            exit 1
+          fi
+          
+          ARCHIVE_NAME="${EXECUTABLE_NAME}-macos-arm64.tar.gz"
+          # cd to the directory containing the executable
+          cd "${EXECUTABLE_DIR}"
+          
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          
+          echo "Creating archive ${ARCHIVE_NAME}..."
+          tar -czvf "${ARCHIVE_NAME}" "${EXECUTABLE_NAME}"
+          
+          # Move archive to a consistent location for uploading
+          mkdir -p "${{ github.workspace }}/artifacts"
+          mv "${ARCHIVE_NAME}" "${{ github.workspace }}/artifacts/"
+          echo "Archive moved to ${{ github.workspace }}/artifacts/${ARCHIVE_NAME}"
+          echo "archive_path=${{ github.workspace }}/artifacts/${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
           echo "swift_artifact_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Swift App build artifact
@@ -203,7 +227,7 @@ jobs:
       - name: Download Swift App artifact
         uses: actions/download-artifact@v4
         with:
-          name: joseph.mattiello.resume-macos-universal.tar.gz
+          name: joseph.mattiello.resume-macos-arm64.tar.gz
           # Artifact will be downloaded to the root of the workspace
 
       - name: Download PDF artifact
@@ -223,7 +247,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            joseph.mattiello.resume-macos-universal.tar.gz
+            joseph.mattiello.resume-macos-arm64.tar.gz
             resume.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

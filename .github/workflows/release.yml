@@ -138,12 +138,15 @@ jobs:
           # cd to the directory containing the executable
           cd "${EXECUTABLE_DIR}"
           
+          echo "Copying Resources/resume.yaml into staging directory..."
+          cp "${{ github.workspace }}/Resources/resume.yaml" ./resume.yaml
+
           echo "Current directory: $(pwd)"
-          echo "Contents of current directory:"
+          echo "Contents of current directory (after copying resume.yaml):"
           ls -la
           
           echo "Creating archive ${ARCHIVE_NAME}..."
-          tar -czvf "${ARCHIVE_NAME}" "${EXECUTABLE_NAME}"
+          tar -czvf "${ARCHIVE_NAME}" "${EXECUTABLE_NAME}" resume.yaml
           
           # Move archive to a consistent location for uploading
           mkdir -p "${{ github.workspace }}/artifacts"

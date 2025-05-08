@@ -16,7 +16,7 @@ jobs:
       - name: Setup Swift
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: '5.9' # Specify your project's Swift version
+          swift-version: '6.0' # Specify your project's Swift version
 
       - name: Build Universal Swift application
         run: swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64

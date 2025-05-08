@@ -174,12 +174,47 @@ struct ResumeTUI {
     // MARK: - Ncurses UI Setup and Drawing (Static Methods)
     @MainActor
     static func setupNcurses() {
+        tuiState.appendToDebugLog("--- NCurses Setup Initializing ---")
+
+        // Log isatty status for standard file descriptors
+        tuiState.appendToDebugLog("isatty(STDIN_FILENO): \(isatty(STDIN_FILENO)) ('\(String(cString: strerror(errno)))')")
+        errno = 0 // Reset errno after checking
+        tuiState.appendToDebugLog("isatty(STDOUT_FILENO): \(isatty(STDOUT_FILENO)) ('\(String(cString: strerror(errno)))')")
+        errno = 0
+        tuiState.appendToDebugLog("isatty(STDERR_FILENO): \(isatty(STDERR_FILENO)) ('\(String(cString: strerror(errno))))")
+        errno = 0
+
+        // Log relevant environment variables
+        let envVars = ["TERM", "LC_ALL", "LC_CTYPE", "LANG"]
+        for ev in envVars {
+            if let value = getenv(ev) {
+                tuiState.appendToDebugLog("ENV \(ev): \(String(cString: value))")
+            } else {
+                tuiState.appendToDebugLog("ENV \(ev): not set")
+            }
+        }
+
         // Set the locale to the user's environment settings. This is crucial
         // for ncurses to correctly handle multi-byte characters (UTF-8).
         // It MUST be called before initscr().
         _ = setlocale(LC_ALL, "")
+        if let currentLocale = setlocale(LC_ALL, nil) {
+            tuiState.appendToDebugLog("Locale set to: \(String(cString: currentLocale))")
+        } else {
+            tuiState.appendToDebugLog("Locale could not be determined after attempting to set it.")
+        }
 
         tuiState.screen = initscr()
+        if let screen = tuiState.screen {
+            tuiState.appendToDebugLog("initscr() called successfully.")
+            tuiState.appendToDebugLog("Terminal dimensions (post-initscr): \(getmaxy(screen)) rows, \(getmaxx(screen)) cols")
+        } else {
+            tuiState.appendToDebugLog("initscr() FAILED. Screen pointer is nil.")
+            // If initscr fails, ncurses operations are not possible. Print debug log and exit.
+            printDebugLogAndShutdownNcurses(withMessage: "initscr() failed")
+            exit(1)
+        }
+
         noecho()
         keypad(tuiState.screen, true)
         start_color()
@@ -195,15 +230,37 @@ struct ResumeTUI {
             init_pair(8, Int16(COLOR_BLACK), Int16(COLOR_GREEN)) // Black on Green for matrix overlay text
         }
         bkgd(chtype(Cncurses.COLOR_PAIR(1)))
+        
         // Allow smaller terminals for testing
-        if getmaxy(tuiState.screen) < 10 || getmaxx(tuiState.screen) < 40 {
-            endwin()
-            print("Terminal too small. Please resize to at least 40x10.")
-            exit(1)
+        // This check is after initscr(), so getmaxy/getmaxx should be valid if screen is not nil.
+        if getmaxy(tuiState.screen) < 10 || getmaxx(tuiState.screen) < 40 { // Original minimums: 40 cols, 10 lines
+            // endwin() is handled by printDebugLogAndShutdownNcurses
+            printDebugLogAndShutdownNcurses(withMessage: "Terminal too small. Detected: \(getmaxx(tuiState.screen)) cols, \(getmaxy(tuiState.screen)) rows.")
+            exit(1) // Explicitly exit
         }
-        refresh()
+        tuiState.appendToDebugLog("Ncurses setup completed successfully.")
     }
 
+    // MARK: - Debug Log Printing and Shutdown
+    @MainActor
+    static func printDebugLogAndShutdownNcurses(withMessage message: String = "Exiting") {
+        let wasScreenNil = (tuiState.screen == nil)
+        if !wasScreenNil {
+            endwin() // Gracefully shut down ncurses if it was initialized
+        }
+        
+        // Print to stderr to avoid issues if stdout is redirected or in an odd state
+        let stderr = FileHandle.standardError
+        if let data = "\n--- DEBUG LOG (\(message)) ---\n".data(using: .utf8) { stderr.write(data) }
+        tuiState.debugLog.forEach { if let data = "\($0)\n".data(using: .utf8) { stderr.write(data) } }
+        if let data = "--- END DEBUG LOG ---\n".data(using: .utf8) { stderr.write(data) }
+
+        if wasScreenNil && message == "Exiting" { // If called before ncurses setup, print a note
+             if let data = "Note: Ncurses screen was not initialized or initscr() failed.\n".data(using: .utf8) { stderr.write(data) }
+        }
+    }
+
+    // MARK: - Ncurses UI Setup and Drawing (Static Methods)
     @MainActor
     static func createWindows() {
         let _ = getmaxy(tuiState.screen) // Replaced maxY with _
@@ -463,20 +520,21 @@ struct ResumeTUI {
         createWindows()
         if let resume = loadResumeData() {
             tuiState.resume = resume
+            runMainLoop()
+            // This is reached when runMainLoop returns (e.g., user quits)
+            printDebugLogAndShutdownNcurses(withMessage: "Normal application exit")
         } else {
-            endwin()
-            let finalMessage = tuiState.lastError ?? "Failed to load resume data (unknown error)."
-            fputs("\n--- Resume Loading Error ---\n", stderr)
-            fputs("\(finalMessage)\n", stderr)
-            fputs("\n--- Debug Log ---\n", stderr)
-            for logEntry in tuiState.debugLog {
-                fputs("\(logEntry)\n", stderr)
+            // Error loading resume data, tuiState.lastError should be set by loadResumeData
+            // loadResumeData itself also appends to debugLog
+            if let errorMsg = tuiState.lastError {
+                 let stderr = FileHandle.standardError
+                 if let data = "Critical Error: Failed to load resume data - \(errorMsg)\n".data(using: .utf8) { stderr.write(data) }
             }
-            fputs("--- End Debug Log ---\n", stderr)
+            printDebugLogAndShutdownNcurses(withMessage: "Failed to load resume data")
             exit(1)
         }
-        runMainLoop()
-        endwin() // Clean up ncurses before exiting
+        // Note: If runMainLoop() could throw or have other exit paths not returning,
+        // more complex exit handling (like signal trapping) might be needed for those.
     }
 }
 

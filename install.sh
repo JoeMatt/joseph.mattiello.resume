@@ -23,6 +23,60 @@ echo "  ║                                                           ║"
 echo "  ╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
+# Check for --uninstall flag
+if [ "$1" == "--uninstall" ]; then
+    CONFIG_DIR_BASE="$HOME/.config/joseph.mattiello.resume"
+    INSTALL_INFO_FILE_BASE="$CONFIG_DIR_BASE/install_info.txt"
+
+    uninstall_application() {
+        echo -e "${YELLOW}Attempting to uninstall Joseph Mattiello's Resume...${NC}"
+
+        if [ ! -f "$INSTALL_INFO_FILE_BASE" ]; then
+            echo -e "${RED}Error: Installation information not found at $INSTALL_INFO_FILE_BASE.${NC}"
+            echo -e "${YELLOW}The application might not have been installed with the permanent option, or the info file was removed.${NC}"
+            echo -e "${YELLOW}Please locate and remove the binary manually if needed.${NC}"
+            exit 1
+        fi
+
+        INSTALLED_EXECUTABLE_PATH=$(cat "$INSTALL_INFO_FILE_BASE")
+
+        if [ -z "$INSTALLED_EXECUTABLE_PATH" ]; then
+            echo -e "${RED}Error: Installation path in $INSTALL_INFO_FILE_BASE is empty.${NC}"
+            rm -f "$INSTALL_INFO_FILE_BASE"
+            echo -e "${YELLOW}Removed corrupted info file. Please locate and remove the binary manually if needed.${NC}"
+            exit 1
+        fi
+
+        if [ ! -f "$INSTALLED_EXECUTABLE_PATH" ]; then
+            echo -e "${RED}Error: The installed executable at $INSTALLED_EXECUTABLE_PATH was not found.${NC}"
+            echo -e "${YELLOW}It might have been moved or deleted already.${NC}"
+            read -p "Do you want to remove the installation info file ($INSTALL_INFO_FILE_BASE) anyway? (y/N): " REMOVE_INFO_CHOICE
+            if [[ "$REMOVE_INFO_CHOICE" =~ ^[Yy]$ ]]; then
+                rm -f "$INSTALL_INFO_FILE_BASE"
+                echo -e "${GREEN}Removed $INSTALL_INFO_FILE_BASE.${NC}"
+            fi
+            exit 1
+        fi
+
+        echo -e "${YELLOW}Found installed application at: ${GREEN}$INSTALLED_EXECUTABLE_PATH${NC}"
+        read -p "Are you sure you want to remove it? (y/N): " CONFIRM_UNINSTALL
+
+        if [[ "$CONFIRM_UNINSTALL" =~ ^[Yy]$ ]]; then
+            rm -f "$INSTALLED_EXECUTABLE_PATH" && \
+            rm -f "$INSTALL_INFO_FILE_BASE" && \
+            echo -e "${GREEN}Successfully uninstalled Joseph Mattiello's Resume from $INSTALLED_EXECUTABLE_PATH.${NC}"
+            echo -e "${GREEN}Removed installation info file $INSTALL_INFO_FILE_BASE.${NC}"
+            echo -e "${YELLOW}Please remember to manually remove any shell alias you might have created (e.g., in ~/.bashrc or ~/.zshrc).${NC}"
+            echo -e "${YELLOW}You may also remove the configuration directory ${GREEN}$CONFIG_DIR_BASE${YELLOW} if you wish.${NC}"
+        else
+            echo -e "${YELLOW}Uninstallation cancelled.${NC}"
+        fi
+        exit 0
+    }
+
+    uninstall_application
+fi
+
 # Check if Swift is installed
 if ! command -v swift &> /dev/null; then
     echo -e "${RED}Error: Swift is not installed on your system.${NC}"
@@ -132,6 +186,78 @@ echo -e "${YELLOW}Building the resume application...${NC}"
 if ! swift build; then
     echo -e "${RED}Failed to build the resume application.${NC}"
     exit 1
+fi
+
+# Offer to install the binary
+echo -e "${YELLOW}Installation (Optional):${NC}"
+read -p "Do you want to install 'joseph.mattiello.resume' to a permanent location? (y/N): " INSTALL_CHOICE
+
+INSTALLED_PATH=""
+
+if [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then
+    DEFAULT_INSTALL_DIR="$HOME/.local/bin"
+    echo -e "Suggested installation directory: ${GREEN}$DEFAULT_INSTALL_DIR${NC}"
+    read -p "Enter installation directory (or press Enter for default): " CUSTOM_INSTALL_DIR
+    
+    INSTALL_DIR="${CUSTOM_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
+    
+    # Expand tilde
+    INSTALL_DIR_EXPANDED="$(eval echo "$INSTALL_DIR")"
+    
+    if [ ! -d "$INSTALL_DIR_EXPANDED" ]; then
+        echo -e "${YELLOW}Directory $INSTALL_DIR_EXPANDED does not exist. Creating it...${NC}"
+        mkdir -p "$INSTALL_DIR_EXPANDED" || {
+            echo -e "${RED}Failed to create directory $INSTALL_DIR_EXPANDED. Installation aborted.${NC}"
+            INSTALL_CHOICE="N" # Proceed without installation
+        }
+    fi
+    
+    if [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then # Check again in case directory creation failed
+        SOURCE_EXECUTABLE=".build/debug/joseph.mattiello.resume"
+        TARGET_EXECUTABLE="$INSTALL_DIR_EXPANDED/joseph.mattiello.resume"
+        
+        echo -e "${YELLOW}Installing to $TARGET_EXECUTABLE...${NC}"
+        cp "$SOURCE_EXECUTABLE" "$TARGET_EXECUTABLE" && chmod +x "$TARGET_EXECUTABLE" || {
+            echo -e "${RED}Failed to copy or set permissions on $TARGET_EXECUTABLE. Installation aborted.${NC}"
+            INSTALL_CHOICE="N" # Proceed without installation
+        }
+        
+        if [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then
+            INSTALLED_PATH="$TARGET_EXECUTABLE"
+            echo -e "${GREEN}Successfully installed 'joseph.mattiello.resume' to $TARGET_EXECUTABLE${NC}"
+
+            # Save installation info for uninstaller
+            CONFIG_DIR="$HOME/.config/joseph.mattiello.resume"
+            INSTALL_INFO_FILE="$CONFIG_DIR/install_info.txt"
+            mkdir -p "$CONFIG_DIR"
+            echo "$TARGET_EXECUTABLE" > "$INSTALL_INFO_FILE"
+            
+            # Check if the installation directory is in PATH
+            if [[ ":$PATH:" != *":$INSTALL_DIR_EXPANDED:"* ]]; then
+                echo -e "${YELLOW}Note: The directory $INSTALL_DIR_EXPANDED is not in your PATH.${NC}"
+                echo -e "${YELLOW}You may need to add it to your shell configuration file (e.g., ~/.bashrc, ~/.zshrc):${NC}"
+                echo -e "${GREEN}  export PATH=\"$INSTALL_DIR_EXPANDED:\$PATH\"${NC}"
+                echo -e "${YELLOW}Or, you can run the resume using the full path: $TARGET_EXECUTABLE${NC}"
+            fi
+            echo -e "${YELLOW}You can now run it by typing: ${GREEN}joseph.mattiello.resume${NC} (if $INSTALL_DIR_EXPANDED is in your PATH) or ${GREEN}$TARGET_EXECUTABLE${NC}${NC}"
+        fi
+    fi
+fi
+
+# Offer to help create an alias if installation was successful
+if [ -n "$INSTALLED_PATH" ] && [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then
+    echo -e "\n${YELLOW}Alias Creation (Optional):${NC}"
+    read -p "Would you like instructions to create a shell alias for easy access (e.g., 'myresume')? (y/N): " ALIAS_CHOICE
+    if [[ "$ALIAS_CHOICE" =~ ^[Yy]$ ]]; then
+        DEFAULT_ALIAS_NAME="myresume"
+        read -p "Enter desired alias name (or press Enter for '$DEFAULT_ALIAS_NAME'): " CUSTOM_ALIAS_NAME
+        ALIAS_NAME="${CUSTOM_ALIAS_NAME:-$DEFAULT_ALIAS_NAME}"
+        
+        echo -e "${YELLOW}To create the alias, add the following line to your shell configuration file${NC}"
+        echo -e "${YELLOW}(e.g., ${GREEN}~/.bashrc${YELLOW}, ${GREEN}~/.zshrc${YELLOW}, or ${GREEN}~/.config/fish/config.fish${YELLOW}):${NC}"
+        echo -e "${GREEN}alias $ALIAS_NAME='$INSTALLED_PATH'${NC}"
+        echo -e "${YELLOW}After adding it, you'll need to source your config file (e.g., 'source ~/.bashrc') or open a new terminal.${NC}"
+    fi
 fi
 
 # Check terminal size before running the application

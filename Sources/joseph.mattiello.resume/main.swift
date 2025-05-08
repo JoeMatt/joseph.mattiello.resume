@@ -181,7 +181,7 @@ struct ResumeTUI {
         errno = 0 // Reset errno after checking
         tuiState.appendToDebugLog("isatty(STDOUT_FILENO): \(isatty(STDOUT_FILENO)) ('\(String(cString: strerror(errno)))')")
         errno = 0
-        tuiState.appendToDebugLog("isatty(STDERR_FILENO): \(isatty(STDERR_FILENO)) ('\(String(cString: strerror(errno))))")
+        tuiState.appendToDebugLog("isatty(STDERR_FILENO): \(isatty(STDERR_FILENO)) ('\(String(cString: strerror(errno))))") // Corrected typo
         errno = 0
 
         // Log relevant environment variables
@@ -520,6 +520,7 @@ struct ResumeTUI {
         createWindows()
         if let resume = loadResumeData() {
             tuiState.resume = resume
+            tuiState.appendToDebugLog("Before runMainLoop - currentTabIndex: \(tuiState.currentTabIndex), scrollPosition: \(tuiState.scrollPosition)")
             runMainLoop()
             // This is reached when runMainLoop returns (e.g., user quits)
             printDebugLogAndShutdownNcurses(withMessage: "Normal application exit")

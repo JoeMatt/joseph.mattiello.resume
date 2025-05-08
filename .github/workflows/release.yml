@@ -72,6 +72,10 @@ jobs:
           echo "${{ steps.swift_vars.outputs.TOOLCHAIN_BIN_PATH }}" >> "$GITHUB_PATH"
         shell: bash
 
+      - name: Install ncurses for TUI support
+        run: brew install ncurses
+        shell: bash
+
       - name: Build Universal Swift application
         env:
           TOOLCHAIN_PATH_ENV: ${{ steps.swift_vars.outputs.TOOLCHAIN_PATH }} # Pass toolchain path as env for clarity
@@ -106,6 +110,10 @@ jobs:
           # Get SDK path
           SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
           echo "Using SDK Path: $SDK_PATH"
+          
+          # Explicitly set the Swift language version for the build system
+          export SWIFT_VERSION=6.0
+          echo "SWIFT_VERSION explicitly set to: $SWIFT_VERSION"
           
           swift build -v -c release --product joseph.mattiello.resume --arch arm64 --sdk "$SDK_PATH"
 

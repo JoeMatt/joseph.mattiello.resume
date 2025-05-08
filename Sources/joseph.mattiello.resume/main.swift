@@ -321,23 +321,45 @@ struct ResumeTUI {
 
     @MainActor
     static func drawFooter(window: OpaquePointer?) {
-        guard let window = window else { return }
-        wclear(window)
-        box(window, 0, 0)
+        guard let footerWin = tuiState.footerWin else { return }
+        werase(footerWin)
+        let footerHeight = getmaxy(footerWin)
+        let footerWidth = getmaxx(footerWin)
 
-        let footerText: String
+        var footerText: String
         if tuiState.isSearching {
-            // Display search input prompt with a pseudo-cursor
             footerText = "Search: \(tuiState.currentSearchTerm)_"
+        } else if !tuiState.activeSearchTerm.isEmpty {
+            if !tuiState.searchMatchSegmentIndices.isEmpty {
+                let currentMatchNumber = tuiState.currentSearchMatchSegmentIndex + 1
+                let totalMatches = tuiState.searchMatchSegmentIndices.count
+                footerText = "Searched: \(tuiState.activeSearchTerm) [Match \(currentMatchNumber) of \(totalMatches)]"
+            } else {
+                footerText = "Searched: \(tuiState.activeSearchTerm) [No matches]"
+            }
         } else {
             footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | / Search | 1-5 Tabs | Q: Quit"
         }
 
-        _ = footerText.withCString { mvwaddstr(window, 1, (getmaxx(window) - Int32(footerText.count)) / 2, $0) }
-        wrefresh(window)
+        // Basic footer text
+        // let baseNavText = "Navigate: ← → Tabs | ↑ ↓ Scroll | / Search | 1-5 Tabs | Q: Quit"
+        // let fullFooterText = footerText + String(repeating: " ", count: max(0, Int(footerWidth) - footerText.count - baseNavText.count - 1)) + baseNavText
+        // Center the main footer text, and right-align the navigation help for now if space allows
+        // This is a simple approach, might need refinement for perfect alignment
+
+        let navHelpText = "| ← → Tabs | ↑ ↓ Scroll | / Search | 1-5 Tabs | Q: Quit"
+        let availableWidthForMainText = Int(footerWidth) - navHelpText.count - 1 // -1 for a space separator
+        
+        var fullFooterText = footerText
+        if footerText.count < availableWidthForMainText {
+            fullFooterText += String(repeating: " ", count: availableWidthForMainText - footerText.count)
+        }
+        fullFooterText += navHelpText
+
+        mvwaddstr(footerWin, footerHeight / 2, 1, fullFooterText)
+        wrefresh(footerWin)
     }
 
-    // Function to display content based on current tab
     @MainActor
     static func displayContent() { // Removed parameters, will use tuiState directly
         guard let contentWin = tuiState.contentWin else { return }

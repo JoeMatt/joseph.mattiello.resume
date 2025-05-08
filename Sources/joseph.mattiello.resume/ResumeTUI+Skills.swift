@@ -6,65 +6,87 @@ extension ResumeTUI {
     static func formatSkillsTab(resume: Resume) -> [(String, Int32)] {
         var attributedContent: [(String, Int32)] = []
         guard let cw = tuiState.contentWin else { return [] }
+        let searchTerm = tuiState.activeSearchTerm
+        let defaultColor = Cncurses.COLOR_PAIR(3)
+        let headerColor = ResumeTUI.A_BOLD | defaultColor
+        let starColor = Cncurses.COLOR_PAIR(5)
+
+        // Helper to add text, highlighting if a search term is active
+        let addHighlightedLine = { (text: String, attribute: Int32) in
+            if !searchTerm.isEmpty {
+                attributedContent.append(contentsOf: highlightOccurrences(of: searchTerm, in: text, baseAttribute: attribute, highlightAttribute: A_HIGHLIGHT | attribute))
+            } else {
+                attributedContent.append((text, attribute))
+            }
+        }
 
         let contentWidth = Int(getmaxx(cw))
         let leftPadding = "  " // Two spaces for overall left padding
 
-        // Get sorted skills
         let sortedLanguages = resume.skills.programmingLanguages
             .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
         let sortedSDKs = resume.skills.sdksApis
             .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
 
-        // Rating settings
-        let starWidth = 10 // Width for the stars (★★★★★)
-        let ratingTextWidth = 5 // For " (x/5)"
-        let nameWidth = contentWidth - starWidth - ratingTextWidth - leftPadding.count - 4 // Adjusted for padding
+        let starWidth = 10
+        let ratingTextWidth = 5
+        let nameWidth = contentWidth - starWidth - ratingTextWidth - leftPadding.count - 4
 
-        // Main title
-        attributedContent.append((leftPadding + "TECHNICAL SKILLS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append((leftPadding + String(repeating: "─", count: contentWidth - (leftPadding.count * 2)) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        addHighlightedLine(leftPadding + "TECHNICAL SKILLS\n", headerColor)
+        attributedContent.append((leftPadding + String(repeating: "─", count: contentWidth - (leftPadding.count * 2)) + "\n\n", defaultColor))
 
-        // Programming Languages section
-        attributedContent.append((leftPadding + "PROGRAMMING LANGUAGES\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append((leftPadding + String(repeating: "─", count: "PROGRAMMING LANGUAGES".count) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        addHighlightedLine(leftPadding + "PROGRAMMING LANGUAGES\n", headerColor)
+        attributedContent.append((leftPadding + String(repeating: "─", count: "PROGRAMMING LANGUAGES".count) + "\n\n", defaultColor))
 
-        // Create a grid for Programming Languages
         for lang in sortedLanguages {
             let namePart = lang.name.padding(toLength: nameWidth, withPad: " ", startingAt: 0)
-            attributedContent.append((leftPadding + namePart + " ", Cncurses.COLOR_PAIR(3)))
+            addHighlightedLine(leftPadding + namePart + " ", defaultColor)
 
-            // Draw star rating
             let stars = String(repeating: "★", count: lang.rating) +
                         String(repeating: "☆", count: 5 - lang.rating)
-            attributedContent.append((stars + " ", Cncurses.COLOR_PAIR(5)))
-
-            // Rating text
-            attributedContent.append(("(\(lang.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append((stars + " ", starColor))
+            attributedContent.append(("(\(lang.rating)/5)\n", defaultColor))
         }
 
-        // Spacing between sections
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("\n", defaultColor))
 
-        // SDKs & APIs section
-        attributedContent.append((leftPadding + "SDKS & APIS\n", ResumeTUI.A_BOLD | Cncurses.COLOR_PAIR(3)))
-        attributedContent.append((leftPadding + String(repeating: "─", count: "SDKS & APIS".count) + "\n\n", Cncurses.COLOR_PAIR(3)))
+        addHighlightedLine(leftPadding + "SDKS & APIS\n", headerColor)
+        attributedContent.append((leftPadding + String(repeating: "─", count: "SDKS & APIS".count) + "\n\n", defaultColor))
 
-        // Create a grid for SDKs & APIs
         for sdk in sortedSDKs {
             let namePart = sdk.name.padding(toLength: nameWidth, withPad: " ", startingAt: 0)
-            attributedContent.append((leftPadding + namePart + " ", Cncurses.COLOR_PAIR(3)))
+            addHighlightedLine(leftPadding + namePart + " ", defaultColor)
 
-            // Draw star rating
             let stars = String(repeating: "★", count: sdk.rating) +
                         String(repeating: "☆", count: 5 - sdk.rating)
-            attributedContent.append((stars + " ", Cncurses.COLOR_PAIR(5)))
-
-            // Rating text
-            attributedContent.append(("(\(sdk.rating)/5)\n", Cncurses.COLOR_PAIR(3)))
+            attributedContent.append((stars + " ", starColor))
+            attributedContent.append(("(\(sdk.rating)/5)\n", defaultColor))
         }
 
-        attributedContent.append(("\n", Cncurses.COLOR_PAIR(3)))
+        attributedContent.append(("\n", defaultColor))
         return attributedContent
+    }
+
+    @MainActor
+    static func getRawSkillsLines(resume: Resume) -> [String] {
+        var lines: [String] = []
+
+        // Programming Languages
+        for lang in resume.skills.programmingLanguages {
+            lines.append(lang.name)
+        }
+
+        // SDKs & APIs
+        for sdk in resume.skills.sdksApis {
+            lines.append(sdk.name)
+        }
+        
+        // Tools & Technologies (if you add this to your Resume model and want to search it)
+        // for tool in resume.skills.toolsAndTechnologies {
+        //     lines.append(tool.name)
+        // }
+
+        // Filter out any empty lines that might have been added and remove duplicates
+        return Array(Set(lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })).sorted()
     }
 }

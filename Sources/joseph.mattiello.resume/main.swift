@@ -5,6 +5,14 @@ import Darwin // For setlocale, LC_ALL
 
 @MainActor
 struct ResumeTUI {
+    // MARK: - Nested Structs
+    struct SearchMatch {
+        let tabIndex: Int
+        let originalLineIndex: Int // Index of the line in the *unformatted* content of the tab
+        let rangeInLine: Range<String.Index> // Range of the match within that original line
+        let matchedLineText: String // The original line text where the match was found
+    }
+
     // MARK: - Nested TUIState
     @MainActor
     class TUIState {
@@ -18,6 +26,14 @@ struct ResumeTUI {
         var lastError: String?
         var debugLog: [String] = [] // Added for debug logging
 
+        // Search State
+        var isSearching: Bool = false
+        var currentSearchTerm: String = ""
+        var activeSearchTerm: String = "" // The term actually being searched for
+        // For later: storing search results
+        var searchMatches: [SearchMatch] = []
+        var currentSearchMatchIndex: Int = -1 // -1 means no match selected/active
+
         func appendToDebugLog(_ message: String) {
             debugLog.append(message)
         }
@@ -27,6 +43,7 @@ struct ResumeTUI {
     static let A_BOLD: Int32 = 0x00200000
     static let A_UNDERLINE: Int32 = 0x00000040
     static let A_REVERSE: Int32 = 0x00040000 // Remains for potential other uses
+    static let A_HIGHLIGHT: Int32 = 0x00040000 // Or define a specific color pair if preferred
     // static let A_REVERSE_CHTYPE: chtype = chtype(ResumeTUI.A_REVERSE) // No longer needed for boot screen static text
 
     // MARK: - TUI State (Static Properties)
@@ -230,7 +247,7 @@ struct ResumeTUI {
             init_pair(8, Int16(COLOR_BLACK), Int16(COLOR_GREEN)) // Black on Green for matrix overlay text
         }
         bkgd(chtype(Cncurses.COLOR_PAIR(1)))
-        
+
         // Allow smaller terminals for testing
         // This check is after initscr(), so getmaxy/getmaxx should be valid if screen is not nil.
         if getmaxy(tuiState.screen) < 10 || getmaxx(tuiState.screen) < 40 { // Original minimums: 40 cols, 10 lines
@@ -248,7 +265,7 @@ struct ResumeTUI {
         if !wasScreenNil {
             endwin() // Gracefully shut down ncurses if it was initialized
         }
-        
+
         // Print to stderr to avoid issues if stdout is redirected or in an odd state
         let stderr = FileHandle.standardError
         if let data = "\n--- DEBUG LOG (\(message)) ---\n".data(using: .utf8) { stderr.write(data) }
@@ -301,13 +318,20 @@ struct ResumeTUI {
         wrefresh(window)
     }
 
-    // Function to draw the footer with instructions
     @MainActor
     static func drawFooter(window: OpaquePointer?) {
         guard let window = window else { return }
         wclear(window)
         box(window, 0, 0)
-        let footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | 1-5 Tabs | Q: Quit"
+
+        let footerText: String
+        if tuiState.isSearching {
+            // Display search input prompt with a pseudo-cursor
+            footerText = "Search: \(tuiState.currentSearchTerm)_"
+        } else {
+            footerText = "Navigate: ← → Tabs | ↑ ↓ Scroll | / Search | 1-5 Tabs | Q: Quit"
+        }
+
         _ = footerText.withCString { mvwaddstr(window, 1, (getmaxx(window) - Int32(footerText.count)) / 2, $0) }
         wrefresh(window)
     }
@@ -418,90 +442,80 @@ struct ResumeTUI {
 
         while true {
             if needsRedraw {
-                refreshAllUI()
+                drawHeader(window: tuiState.headerWin)
+                displayContent() // This will draw content in tuiState.contentWin
+                drawFooter(window: tuiState.footerWin)
+                // No global refresh() here, individual window refreshes are enough
                 needsRedraw = false
             }
 
-            let ch = getch() // Get character input (blocking)
+            let input = getch()
 
-            switch ch {
-            case KEY_LEFT, Int32(Character("h").asciiValue!):
-                if tuiState.currentTabIndex > 0 {
-                    tuiState.currentTabIndex -= 1
-                    tuiState.scrollPosition = 0 // Reset scroll on tab change
-                    needsRedraw = true
+            if tuiState.isSearching {
+                switch input {
+                    case 10, 13, KEY_ENTER: // Enter key (10 for LF, 13 for CR)
+                        tuiState.activeSearchTerm = tuiState.currentSearchTerm
+                        tuiState.isSearching = false
+                        performSearch() // Perform the search
+                        needsRedraw = true
+                        tuiState.appendToDebugLog("Search submitted: \(tuiState.activeSearchTerm)")
+                        // Future: Trigger actual search logic here and update displayContent
+                    case 27: // Escape key
+                        tuiState.isSearching = false
+                        tuiState.currentSearchTerm = ""
+                        tuiState.activeSearchTerm = ""
+                        needsRedraw = true
+                    case KEY_BACKSPACE, 127, 8: // Backspace (127 for some terminals, 8 for others)
+                        if !tuiState.currentSearchTerm.isEmpty {
+                            tuiState.currentSearchTerm.removeLast()
+                            needsRedraw = true
+                        }
+                    default:
+                        // Check for printable ASCII characters
+                        if (input >= 32 && input <= 126) { // Printable ASCII range
+                            let char = UnicodeScalar(UInt8(input))
+                            tuiState.currentSearchTerm.append(String(char))
+                            needsRedraw = true
+                        }
                 }
-            case KEY_RIGHT, Int32(Character("l").asciiValue!):
-                if tuiState.currentTabIndex < TAB_NAMES.count - 1 {
-                    tuiState.currentTabIndex += 1
-                    tuiState.scrollPosition = 0 // Reset scroll on tab change
-                    needsRedraw = true
+            } else { // Not searching, handle normal navigation
+                switch input {
+                    case Int32(Character("q").asciiValue!), Int32(Character("Q").asciiValue!):
+                        return // Exit the main loop (and thus the application)
+                    case KEY_LEFT:
+                        tuiState.currentTabIndex = (tuiState.currentTabIndex - 1 + TAB_NAMES.count) % TAB_NAMES.count
+                        tuiState.scrollPosition = 0 // Reset scroll on tab change
+                        needsRedraw = true
+                    case KEY_RIGHT:
+                        tuiState.currentTabIndex = (tuiState.currentTabIndex + 1) % TAB_NAMES.count
+                        tuiState.scrollPosition = 0 // Reset scroll on tab change
+                        needsRedraw = true
+                    case KEY_UP:
+                        tuiState.scrollPosition = max(0, tuiState.scrollPosition - 1)
+                        needsRedraw = true
+                    case KEY_DOWN:
+                        // We don't know max scroll here easily, so allow scrolling down
+                        // displayContent will clamp it if it goes too far.
+                        tuiState.scrollPosition += 1
+                        needsRedraw = true
+                    case Int32(Character("1").asciiValue!)...Int32(Character("\(TAB_NAMES.count)").asciiValue!):
+                        let digit = input - Int32(Character("0").asciiValue!)
+                        if digit >= 1 && digit <= TAB_NAMES.count {
+                            tuiState.currentTabIndex = Int(digit - 1)
+                            tuiState.scrollPosition = 0 // Reset scroll on tab change
+                            needsRedraw = true
+                        }
+                    case Int32(Character("/").asciiValue!):
+                        tuiState.isSearching = true
+                        tuiState.currentSearchTerm = ""
+                        tuiState.activeSearchTerm = ""
+                        // Clear previous search results if any (when implemented)
+                        // tuiState.searchMatches = []
+                        // tuiState.currentSearchMatchIndex = 0
+                        needsRedraw = true
+                    default:
+                        break // Ignore other keys
                 }
-            case KEY_UP, Int32(Character("k").asciiValue!):
-                if tuiState.scrollPosition > 0 {
-                    tuiState.scrollPosition -= 1
-                    needsRedraw = true
-                }
-            case KEY_DOWN, Int32(Character("j").asciiValue!):
-                // Max scroll limit handled by displayContent by adjusting scrollPosition
-                // Simply increment scrollPosition; displayContent will clamp it.
-                tuiState.scrollPosition += 1
-                needsRedraw = true
-            case KEY_PPAGE: // Page Up
-                if tuiState.scrollPosition > 0 {
-                    // Scroll up by the height of the content window (minus a line for context)
-                    // or a fixed amount, e.g., 10 lines.
-                    let pageScrollAmount = max(1, getmaxy(tuiState.contentWin) - 1)
-                    tuiState.scrollPosition = max(0, tuiState.scrollPosition - Int(pageScrollAmount))
-                    needsRedraw = true
-                }
-            case KEY_NPAGE: // Page Down
-                // displayContent will handle clamping if scrollPosition goes too far
-                let pageScrollAmount = max(1, getmaxy(tuiState.contentWin) - 1)
-                tuiState.scrollPosition += Int(pageScrollAmount)
-                needsRedraw = true
-            case Int32(Character("1").asciiValue!):
-                if tuiState.currentTabIndex != 0 {
-                    tuiState.currentTabIndex = 0
-                    tuiState.scrollPosition = 0
-                    needsRedraw = true
-                }
-            case Int32(Character("2").asciiValue!):
-                if tuiState.currentTabIndex != 1 {
-                    tuiState.currentTabIndex = 1
-                    tuiState.scrollPosition = 0
-                    needsRedraw = true
-                }
-            case Int32(Character("3").asciiValue!):
-                if tuiState.currentTabIndex != 2 {
-                    tuiState.currentTabIndex = 2
-                    tuiState.scrollPosition = 0
-                    needsRedraw = true
-                }
-            case Int32(Character("4").asciiValue!):
-                if tuiState.currentTabIndex != 3 {
-                    tuiState.currentTabIndex = 3
-                    tuiState.scrollPosition = 0
-                    needsRedraw = true
-                }
-            case Int32(Character("5").asciiValue!):
-                if tuiState.currentTabIndex != 4 {
-                    tuiState.currentTabIndex = 4
-                    tuiState.scrollPosition = 0
-                    needsRedraw = true
-                }
-            case Int32(Character("q").asciiValue!):
-                return // Exit loop
-            case KEY_RESIZE: // Handle terminal resize
-                // Recreate windows with new dimensions
-                // Potentially more sophisticated handling for resizing is possible
-                // For now, just clear and redraw everything
-                endwin() // Temporarily end ncurses mode
-                setupNcurses() // Re-initialize with new terminal size
-                createWindows()
-                needsRedraw = true // Mark for full redraw
-            default:
-                break // Ignore other keys
             }
         }
     }
@@ -510,6 +524,119 @@ struct ResumeTUI {
     static func displayBootScreen() {
         // Use the new matrix boot screen implementation
         displayMatrixBootScreen()
+    }
+
+    // MARK: - Search Logic
+    @MainActor
+    static func performSearch() {
+        tuiState.searchMatches.removeAll()
+        tuiState.currentSearchMatchIndex = -1
+
+        guard !tuiState.activeSearchTerm.isEmpty, let resume = tuiState.resume else {
+            return
+        }
+
+        let searchTerm = tuiState.activeSearchTerm
+        let searchTermLowercased = searchTerm.lowercased()
+
+        for tabIndex in 0..<TAB_NAMES.count {
+            var rawContentLines: [String] = []
+
+            switch tabIndex {
+                case 0: // Overview
+                    rawContentLines = ResumeTUI.getRawOverviewLines(resume: resume)
+                case 1: // Experience
+                    rawContentLines = ResumeTUI.getRawExperienceLines(resume: resume)
+                case 2: // Skills
+                    rawContentLines = ResumeTUI.getRawSkillsLines(resume: resume)
+                case 3: // Projects
+                    rawContentLines = ResumeTUI.getRawProjectsLines(resume: resume)
+                case 4: // Contributions
+                    rawContentLines = ResumeTUI.getRawContributionsLines(resume: resume)
+                default:
+                    break
+            }
+
+            // ... (the rest of the function for finding matches remains the same) ...
+            for (lineIndex, originalLine) in rawContentLines.enumerated() {
+                var searchStartIndex = originalLine.startIndex
+                let originalLineLowercased = originalLine.lowercased()
+
+                while searchStartIndex < originalLine.endIndex,
+                      let rangeInLowercasedLine = originalLineLowercased.range(of: searchTermLowercased, options: .caseInsensitive, range: searchStartIndex..<originalLine.endIndex) {
+
+                    guard let actualRangeInOriginalLine = originalLine.range(of: searchTerm, options: .caseInsensitive, range: rangeInLowercasedLine) else {
+                        let nsRange = NSRange(rangeInLowercasedLine, in: originalLineLowercased)
+                        if let swiftRange = Range(nsRange, in: originalLine) {
+                             let match = SearchMatch(tabIndex: tabIndex,
+                                                    originalLineIndex: lineIndex,
+                                                    rangeInLine: swiftRange,
+                                                    matchedLineText: originalLine)
+                            tuiState.searchMatches.append(match)
+                        }
+                        searchStartIndex = rangeInLowercasedLine.upperBound
+                        continue
+                    }
+
+                    let match = SearchMatch(tabIndex: tabIndex,
+                                            originalLineIndex: lineIndex,
+                                            rangeInLine: actualRangeInOriginalLine,
+                                            matchedLineText: originalLine)
+                    tuiState.searchMatches.append(match)
+                    searchStartIndex = actualRangeInOriginalLine.upperBound
+                }
+            }
+        }
+
+        if !tuiState.searchMatches.isEmpty {
+            tuiState.currentSearchMatchIndex = 0
+            tuiState.appendToDebugLog("Found \(tuiState.searchMatches.count) matches for '\(searchTerm)'. First match selected.")
+        } else {
+            tuiState.appendToDebugLog("No matches found for '\(searchTerm)'.")
+        }
+    }
+
+    // MARK: - Text Highlighting Helper
+    @MainActor
+    static func highlightOccurrences(of searchTerm: String, in text: String, baseAttribute: Int32, highlightAttribute: Int32) -> [(String, Int32)] {
+        guard !searchTerm.isEmpty, !text.isEmpty else {
+            return [(text, baseAttribute)]
+        }
+
+        var result: [(String, Int32)] = []
+        var currentIndex = text.startIndex
+        let searchTermLowercased = searchTerm.lowercased()
+        let textLowercased = text.lowercased() // For case-insensitive search ranges
+
+        while currentIndex < text.endIndex {
+            if let rangeInLowercased = textLowercased.range(of: searchTermLowercased, range: currentIndex..<text.endIndex) {
+                // Convert range from lowercased string to original string for accurate substringing
+                // This assumes that the length of the match is the same in both original and lowercased text,
+                // which is true for most common cases but might need adjustment for complex Unicode scenarios.
+                let distanceToStart = textLowercased.distance(from: textLowercased.startIndex, to: rangeInLowercased.lowerBound)
+                let distanceToEnd = textLowercased.distance(from: textLowercased.startIndex, to: rangeInLowercased.upperBound)
+
+                let originalMatchStartIndex = text.index(text.startIndex, offsetBy: distanceToStart)
+                let originalMatchEndIndex = text.index(text.startIndex, offsetBy: distanceToEnd)
+                let actualMatchRangeInOriginal = originalMatchStartIndex..<originalMatchEndIndex
+
+                if actualMatchRangeInOriginal.lowerBound > currentIndex {
+                    // Add the part before the match
+                    let preMatchText = String(text[currentIndex..<actualMatchRangeInOriginal.lowerBound])
+                    result.append((preMatchText, baseAttribute))
+                }
+                // Add the matched part with highlight
+                let matchText = String(text[actualMatchRangeInOriginal])
+                result.append((matchText, highlightAttribute))
+                currentIndex = actualMatchRangeInOriginal.upperBound
+            } else {
+                // No more matches, add the rest of the text
+                let remainingText = String(text[currentIndex..<text.endIndex])
+                result.append((remainingText, baseAttribute))
+                break
+            }
+        }
+        return result
     }
 
     // MARK: - Main Entry Point

@@ -366,7 +366,7 @@ struct ResumeTUI {
         werase(contentWin)
 
         var ncursesY: Int32 = 0
-        var ncursesX: Int32 = 0 // Keep track of X for potential future use, though not strictly needed now
+        var _: Int32 = 0 // Keep track of X for potential future use, though not strictly needed now
         // wmove(contentWin, ncursesY, ncursesX) // Start at (0,0) of the content window - waddstr starts at current cursor pos
 
         let attributedSegmentedContent: [(String, Int32)]
@@ -555,10 +555,25 @@ struct ResumeTUI {
                         tuiState.scrollPosition = max(0, tuiState.scrollPosition - 1)
                         needsRedraw = true
                     case KEY_DOWN:
-                        // We don't know max scroll here easily, so allow scrolling down
-                        // displayContent will clamp it if it goes too far.
+                        // scrollPosition is an index into segments.
+                        // Max scroll will be handled by clamping in displayContent.
                         tuiState.scrollPosition += 1
                         needsRedraw = true
+                    case KEY_PPAGE: // Page Up
+                        if let cw = tuiState.contentWin {
+                            let visibleHeight = getmaxy(cw)
+                            let pageScrollAmount = max(1, Int(visibleHeight - 2)) // -2 for top/bottom border of the box
+                            tuiState.scrollPosition = max(0, tuiState.scrollPosition - pageScrollAmount)
+                            needsRedraw = true
+                        }
+                    case KEY_NPAGE: // Page Down
+                        if let cw = tuiState.contentWin {
+                            let visibleHeight = getmaxy(cw)
+                            let pageScrollAmount = max(1, Int(visibleHeight - 2)) // -2 for top/bottom border of the box
+                            tuiState.scrollPosition += pageScrollAmount
+                            // Clamping to max will be handled in displayContent's logic
+                            needsRedraw = true
+                        }
                     case Int32(Character("1").asciiValue!)...Int32(Character("\(TAB_NAMES.count)").asciiValue!):
                         let digit = input - Int32(Character("0").asciiValue!)
                         if digit >= 1 && digit <= TAB_NAMES.count {

@@ -99,10 +99,18 @@ jobs:
           ls -lav Sources/joseph.mattiello.resume/
 
           echo "Attempting verbose build..."
-          swift build -v -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+          # Clean previous build artifacts
+          swift package clean
+          rm -rf .build # Ensure .build is completely gone
+          
+          # Get SDK path
+          SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
+          echo "Using SDK Path: $SDK_PATH"
+          
+          swift build -v -c release --product joseph.mattiello.resume --arch arm64 --sdk "$SDK_PATH"
 
       - name: Prepare Swift App Artifact
-        id: swift_artifact_prep
+        if: success()
         run: |
           EXECUTABLE_PATH=".build/apple/Products/Release/joseph.mattiello.resume"
           ARCHIVE_NAME="joseph.mattiello.resume-macos-universal.tar.gz"

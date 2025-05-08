@@ -13,13 +13,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Swift
-        uses: tayloraswift/swift-install-action@v1
-        with:
-          version: '6.0.0'
+      - name: Setup Swift (Manual)
+        run: |
+          SWIFT_PKG_URL="https://download.swift.org/development/xcode/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a-osx.pkg"
+          SWIFT_PKG_NAME=$(basename "${SWIFT_PKG_URL}")
+          
+          # Correctly derive the toolchain directory name
+          PKG_BASENAME=$(basename "${SWIFT_PKG_NAME}" .pkg)
+          TOOLCHAIN_DIR_BASENAME=${PKG_BASENAME%-osx} # Remove '-osx' suffix if it exists
+          TOOLCHAIN_NAME="${TOOLCHAIN_DIR_BASENAME}.xctoolchain"
+          TOOLCHAIN_PATH="/Library/Developer/Toolchains/${TOOLCHAIN_NAME}"
+
+          echo "Derived PKG_BASENAME: ${PKG_BASENAME}"
+          echo "Derived TOOLCHAIN_DIR_BASENAME: ${TOOLCHAIN_DIR_BASENAME}"
+          echo "Derived TOOLCHAIN_NAME: ${TOOLCHAIN_NAME}"
+          echo "Using TOOLCHAIN_PATH: ${TOOLCHAIN_PATH}"
+
+          echo "Downloading Swift from ${SWIFT_PKG_URL}..."
+          curl -fsSL -o "${SWIFT_PKG_NAME}" "${SWIFT_PKG_URL}"
+
+          echo "Installing ${SWIFT_PKG_NAME}..."
+          sudo installer -pkg "${SWIFT_PKG_NAME}" -target /
+
+          echo "Swift toolchains available:"
+          ls -lah /Library/Developer/Toolchains/
+
+          echo "Selecting toolchain: ${TOOLCHAIN_PATH}"
+          sudo xcode-select -s "${TOOLCHAIN_PATH}"
+
+          echo "Verifying Swift version..."
+          xcrun swift --version
 
       - name: Build Universal Swift application
-        run: swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+        run: xcrun swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
 
       - name: Prepare Swift App Artifact
         id: swift_artifact_prep

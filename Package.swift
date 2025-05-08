@@ -49,5 +49,8 @@ let package = Package(
         .testTarget(
             name: "joseph.mattiello.resumeTests",
             dependencies: ["joseph.mattiello.resume"]),
+    ],
+    swiftLanguageModes: [
+        .v6
     ]
 )

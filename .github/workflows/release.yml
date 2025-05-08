@@ -47,7 +47,7 @@ jobs:
           SWIFT_PKG_URL: "https://download.swift.org/development/xcode/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a-osx.pkg"
         shell: bash
 
-      - name: Install Swift, Select Toolchain & Verify
+      - name: Install Swift & Setup PATH
         run: |
           echo "Installing from package: ${{ steps.swift_vars.outputs.SWIFT_PKG_FILENAME }}"
           sudo installer -pkg "${{ steps.swift_vars.outputs.SWIFT_PKG_FILENAME }}" -target /
@@ -57,17 +57,20 @@ jobs:
           ls -lah /Library/Developer/Toolchains/
 
           echo "Inspecting contents of selected toolchain directory: ${TOOLCHAIN_PATH}"
-          sudo ls -lR "${TOOLCHAIN_PATH}" || echo "Toolchain directory listing failed (may be empty or permissions issue)"
+          sudo ls -lR "${TOOLCHAIN_PATH}" > toolchain_contents.txt || echo "Toolchain directory listing failed"
+          # cat toolchain_contents.txt # Optionally uncomment to see full listing in logs
 
-          echo "Selecting toolchain: ${TOOLCHAIN_PATH}"
-          sudo xcode-select -s "${TOOLCHAIN_PATH}"
+          # Add toolchain's usr/bin to GITHUB_PATH for subsequent steps
+          TOOLCHAIN_BIN_PATH="${TOOLCHAIN_PATH}/usr/bin"
+          echo "Adding ${TOOLCHAIN_BIN_PATH} to PATH"
+          echo "${TOOLCHAIN_BIN_PATH}" >> "$GITHUB_PATH"
           
-          echo "Verifying Swift version..."
-          xcrun swift --version
+          echo "Verifying Swift version from new PATH..."
+          swift --version
         shell: bash
 
       - name: Build Universal Swift application
-        run: xcrun swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+        run: swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
 
       - name: Prepare Swift App Artifact
         id: swift_artifact_prep

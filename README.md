@@ -5,13 +5,13 @@
 View my interactive resume in your terminal by running:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh && bash
 ```
 
 or
 
 ```bash
-wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash
+wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh && bash
 ```
 
 Requirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.

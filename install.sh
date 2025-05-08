@@ -193,6 +193,89 @@ if [ ! -d "$TEMP_DIR/resume" ]; then
 fi
 cd "$TEMP_DIR/resume"
 
+# Function to ensure ncurses (or equivalent) is installed
+ensure_ncurses_installed() {
+    echo -e "${YELLOW}Checking for ncurses (required for TUI)...${NC}"
+    OS_TYPE=$(uname -s)
+
+    if [ "$OS_TYPE" == "Darwin" ]; then # macOS
+        if command -v brew &> /dev/null; then
+            if brew list ncurses &> /dev/null; then
+                echo -e "${GREEN}ncurses already installed via Homebrew.${NC}"
+            else
+                echo -e "${YELLOW}ncurses not found. Attempting to install with Homebrew...${NC}"
+                if brew install ncurses; then
+                    echo -e "${GREEN}ncurses installed successfully via Homebrew.${NC}"
+                else
+                    echo -e "${RED}Failed to install ncurses with Homebrew.${NC}"
+                    echo -e "${YELLOW}Please try installing it manually or ensure Homebrew is correctly configured.${NC}"
+                    exit 1
+                fi
+            fi
+        else
+            echo -e "${RED}Homebrew not found.${NC}"
+            echo -e "${YELLOW}ncurses is required. Please install Homebrew (https://brew.sh/) and then run 'brew install ncurses', or install ncurses manually.${NC}"
+            exit 1
+        fi
+    elif [ "$OS_TYPE" == "Linux" ]; then
+        # Try common package managers for ncurses development libraries
+        if command -v apt-get &> /dev/null; then
+            if dpkg -s libncursesw5-dev &> /dev/null || dpkg -s libncurses-dev &> /dev/null; then
+                 echo -e "${GREEN}ncurses development libraries already installed (apt).${NC}"
+            else
+                echo -e "${YELLOW}Attempting to install ncurses development libraries with apt...${NC}"
+                sudo apt-get update
+                if sudo apt-get install -y libncursesw5-dev || sudo apt-get install -y libncurses-dev; then # Try wide char first
+                    echo -e "${GREEN}ncurses development libraries installed successfully (apt).${NC}"
+                else
+                    echo -e "${RED}Failed to install ncurses development libraries with apt.${NC}"
+                    exit 1
+                fi
+            fi
+        elif command -v dnf &> /dev/null; then
+            if dnf list installed ncurses-devel &> /dev/null; then
+                echo -e "${GREEN}ncurses-devel already installed (dnf).${NC}"
+            else
+                echo -e "${YELLOW}Attempting to install ncurses-devel with dnf...${NC}"
+                if sudo dnf install -y ncurses-devel; then
+                    echo -e "${GREEN}ncurses-devel installed successfully (dnf).${NC}"
+                else
+                    echo -e "${RED}Failed to install ncurses-devel with dnf.${NC}"
+                    exit 1
+                fi
+            fi
+        elif command -v yum &> /dev/null; then # For older systems like CentOS 7
+             if yum list installed ncurses-devel &> /dev/null; then
+                echo -e "${GREEN}ncurses-devel already installed (yum).${NC}"
+            else
+                echo -e "${YELLOW}Attempting to install ncurses-devel with yum...${NC}"
+                if sudo yum install -y ncurses-devel; then
+                    echo -e "${GREEN}ncurses-devel installed successfully (yum).${NC}"
+                else
+                    echo -e "${RED}Failed to install ncurses-devel with yum.${NC}"
+                    exit 1
+                fi
+            fi
+        else
+            echo -e "${RED}Could not find a known package manager (apt, dnf, yum) to install ncurses development libraries.${NC}"
+            echo -e "${YELLOW}Please install them manually (e.g., libncursesw5-dev, ncurses-devel).${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${YELLOW}Unsupported OS ($OS_TYPE) for automatic ncurses installation.${NC}"
+        echo -e "${YELLOW}Please ensure ncurses (and its development headers) are installed manually.${NC}"
+        # Optionally, you could choose to proceed with a warning or exit here
+        # For now, let's proceed with a warning, the build will fail if it's truly missing.
+        read -p "Proceed with build anyway? (y/N): " PROCEED_NCURSES
+        if [[ ! "$PROCEED_NCURSES" =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+}
+
+# Ensure ncurses is installed before building
+ensure_ncurses_installed
+
 # Build the application
 echo -e "${YELLOW}Building the resume application...${NC}"
 if ! swift build; then

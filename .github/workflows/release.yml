@@ -118,6 +118,7 @@ jobs:
           swift build -c release --product joseph.mattiello.resume --arch arm64 --sdk "$SDK_PATH"
 
       - name: Prepare Swift App Artifact
+        id: prepare_artifact
         if: success()
         run: |
           EXECUTABLE_NAME="joseph.mattiello.resume"
@@ -154,8 +155,8 @@ jobs:
       - name: Upload Swift App build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.swift_artifact_prep.outputs.swift_artifact_name }}
-          path: ${{ steps.swift_artifact_prep.outputs.archive_path }}
+          name: ${{ steps.prepare_artifact.outputs.swift_artifact_name }}
+          path: ${{ steps.prepare_artifact.outputs.archive_path }}
 
       - name: Set up Python
         uses: actions/setup-python@v5 # Updated to v5

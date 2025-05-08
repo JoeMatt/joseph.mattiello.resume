@@ -165,23 +165,39 @@ jobs:
 
       - name: Install Python dependencies
         run: |
+          echo "Installing WeasyPrint system dependencies via Homebrew..."
+          brew install pango cairo gdk-pixbuf glib libffi
+
+          echo "Setting environment variables for Homebrew libraries to build Python packages..."
+          export LDFLAGS="-L/opt/homebrew/lib -L/opt/homebrew/opt/libffi/lib"
+          export CPPFLAGS="-I/opt/homebrew/include -I/opt/homebrew/opt/libffi/include"
+          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/libffi/lib/pkgconfig:$PKG_CONFIG_PATH"
+          # Determine GLIB_CELLAR_PATH dynamically if possible, or use a common pattern
+          # For now, we rely on /opt/homebrew/lib which should contain the symlinks.
+          EFFECTIVE_DYLD_PATH="/opt/homebrew/lib"
+          # If glib is installed, its opt path should give us its lib dir
+          if [ -d "/opt/homebrew/opt/glib/lib" ]; then
+             EFFECTIVE_DYLD_PATH="/opt/homebrew/opt/glib/lib:${EFFECTIVE_DYLD_PATH}"
+          fi
+          echo "DYLD_LIBRARY_PATH=${EFFECTIVE_DYLD_PATH}:${DYLD_LIBRARY_PATH}" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH will be set to: ${EFFECTIVE_DYLD_PATH}:${DYLD_LIBRARY_PATH}"
+
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          echo "Installing Python requirements (no cache)..."
+          pip install --no-cache-dir -r requirements.txt
 
       - name: Generate PDF resume
         id: pdf_generation
         run: |
-          echo "Installing WeasyPrint system dependencies..."
-          brew install pango cairo gdk-pixbuf glib libffi
-          
-          echo "Setting environment variables for Homebrew libraries..."
-          export PKG_CONFIG_PATH="/opt/homebrew/opt/libffi/lib/pkgconfig:/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
-          export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-          echo "PKG_CONFIG_PATH is: $PKG_CONFIG_PATH"
-          echo "DYLD_FALLBACK_LIBRARY_PATH is: $DYLD_FALLBACK_LIBRARY_PATH"
-          
+          echo "Verifying Homebrew GObject library presence..."
+          ls -l /opt/homebrew/lib/libgobject-2.0.dylib /opt/homebrew/lib/libgobject-2.0.0.dylib
+          ls -l /opt/homebrew/opt/glib/lib/libgobject-2.0.dylib /opt/homebrew/opt/glib/lib/libgobject-2.0.0.dylib || echo "Direct glib path for libgobject not found, this might be okay."
+
+          echo "Current DYLD_LIBRARY_PATH from GITHUB_ENV: $DYLD_LIBRARY_PATH"
           echo "Running PDF generation script..."
+          # Python will inherit DYLD_LIBRARY_PATH from the environment
           python generate_html_resume.py
+          
           # Check if resume.pdf was created
           if [ ! -f output/resume.pdf ]; then
             echo "Error: resume.pdf not found in output directory"

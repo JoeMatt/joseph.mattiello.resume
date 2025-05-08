@@ -25,6 +25,7 @@ jobs:
           TOOLCHAIN_NAME="${TOOLCHAIN_DIR_BASENAME}.xctoolchain"
           TOOLCHAIN_PATH="/Library/Developer/Toolchains/${TOOLCHAIN_NAME}"
           echo "TOOLCHAIN_PATH=${TOOLCHAIN_PATH}" >> "$GITHUB_OUTPUT"
+          echo "TOOLCHAIN_BIN_PATH=${TOOLCHAIN_PATH}/usr/bin" >> "$GITHUB_OUTPUT"
           
           # Use a unique part of the URL for the cache key
           CACHE_IDENTIFIER="swift-6-1-release"
@@ -47,36 +48,35 @@ jobs:
           SWIFT_PKG_URL: "https://download.swift.org/swift-6.1-release/xcode/swift-6.1-RELEASE/swift-6.1-RELEASE-osx.pkg"
         shell: bash
 
-      - name: Install Swift & Setup PATH
+      - name: Install Swift & Verify
         run: |
           echo "Installing from package: ${{ steps.swift_vars.outputs.SWIFT_PKG_FILENAME }}"
           sudo installer -pkg "${{ steps.swift_vars.outputs.SWIFT_PKG_FILENAME }}" -target /
 
           TOOLCHAIN_PATH="${{ steps.swift_vars.outputs.TOOLCHAIN_PATH }}"
+          TOOLCHAIN_BIN_PATH="${{ steps.swift_vars.outputs.TOOLCHAIN_BIN_PATH }}"
+
           echo "Swift toolchains available after install:"
           ls -lah /Library/Developer/Toolchains/
 
           echo "Inspecting contents of selected toolchain directory: ${TOOLCHAIN_PATH}"
           sudo ls -lR "${TOOLCHAIN_PATH}" > toolchain_contents.txt || echo "Toolchain directory listing failed"
-          # cat toolchain_contents.txt # Optionally uncomment to see full listing in logs
-
-          # Add toolchain's usr/bin to GITHUB_PATH for subsequent steps
-          TOOLCHAIN_BIN_PATH="${TOOLCHAIN_PATH}/usr/bin"
-          echo "Adding ${TOOLCHAIN_BIN_PATH} to PATH"
-          echo "${TOOLCHAIN_BIN_PATH}" >> "$GITHUB_PATH"
-          
-          echo "Updated PATH: $PATH"
-          echo "Which swift: $(which swift)"
           
           echo "Verifying Swift version directly from toolchain path: ${TOOLCHAIN_BIN_PATH}/swift"
           "${TOOLCHAIN_BIN_PATH}/swift" --version
+        shell: bash
 
-          echo "Verifying Swift version using command found in PATH..."
-          swift --version
+      - name: Add Swift to PATH for subsequent steps
+        run: |
+          echo "Adding ${{ steps.swift_vars.outputs.TOOLCHAIN_BIN_PATH }} to GITHUB_PATH"
+          echo "${{ steps.swift_vars.outputs.TOOLCHAIN_BIN_PATH }}" >> "$GITHUB_PATH"
         shell: bash
 
       - name: Build Universal Swift application
-        run: swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+        run: |
+          echo "PATH is: $PATH"
+          echo "Swift version for build: $(swift --version)"
+          swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
 
       - name: Prepare Swift App Artifact
         id: swift_artifact_prep

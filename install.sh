@@ -103,12 +103,24 @@ echo -e "${YELLOW}Creating temporary directory at ${TEMP_DIR}${NC}"
 
 # Cleanup function
 cleanup() {
-    echo -e "${YELLOW}Cleaning up temporary files...${NC}"
-    rm -rf "$TEMP_DIR"
+    echo -e "${YELLOW}Cleaning up temporary files and script...${NC}"
+    if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then # Check if TEMP_DIR is set and is a directory
+        rm -rf "$TEMP_DIR"
+    fi
+    # $0 is the path to the script.
+    # Ensure it's a regular file and not something like '-' or '/dev/stdin' from a pipe.
+    # The check also avoids paths like /proc/self/fd/NN which can occur with process substitution.
+    if [ -f "$0" ] && [[ "$0" != "-" && "$0" != "/dev/stdin" && ! "$0" =~ ^/proc/self/fd/ ]]; then
+        echo -e "${YELLOW}Removing installer script: $0${NC}"
+        rm -- "$0"
+    else
+        # This case should ideally not be hit with 'bash install.sh' usage.
+        echo -e "${YELLOW}Installer script ('$0') is not a regular file or standard path, not removing.${NC}"
+    fi
 }
 
-# Register the cleanup function to be called on exit
-trap cleanup EXIT
+# Register the cleanup function to be called on exit, also trapping common interrupt signals
+trap cleanup EXIT HUP INT QUIT TERM
 
 # Check for git
 HAS_GIT=0

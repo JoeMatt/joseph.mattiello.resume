@@ -17,6 +17,35 @@ wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/maste
 Requirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.
 
 
+
+## ⌨️ Usage
+
+Navigate the interactive resume using the following keyboard commands:
+
+- **Tab Switching:**
+  - `→` (Right Arrow) or `L` or `l`: Next tab
+  - `←` (Left Arrow) or `H` or `h`: Previous tab
+  - `1` through `5`: Directly jump to Overview, Experience, Skills, Projects, or Contributions tab respectively.
+
+- **Content Scrolling:**
+  - `↓` (Down Arrow) or `J` or `j`: Scroll down
+  - `↑` (Up Arrow) or `K` or `k`: Scroll up
+  - `Space` or `Page Down`: Page down
+  - `b` or `Page Up`: Page up (Back a page)
+
+- **Searching:**
+  - `/`: Activate search mode. The footer will show `Search: _`.
+  - Type your search term. It will appear in the footer.
+  - `Enter`: Submit the search. Matched terms will be highlighted in the content.
+  - `Esc`: Cancel search mode and clear the current search term.
+  - If matches are found, the footer will display `Searched: [term] [Match X of Y]`.
+  - `n`: Navigate to the next search match.
+  - `N` or `p`: Navigate to the previous search match.
+
+- **Quitting:**
+  - `Q` or `q`: Quit the application.
+
+
 # Joseph Mattiello
 
 ## 📬 Contact Information

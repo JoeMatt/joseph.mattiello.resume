@@ -28,7 +28,31 @@ def generate_markdown(resume_data):
     md.append("wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh && bash")
     md.append("```")
     md.append("\nRequirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.")
-    md.append("\n") # Add an extra newline for spacing before the next section
+    md.append("\n") # Add an extra newline for spacing
+
+    # Usage section
+    md.append("\n## ⌨️ Usage")
+    md.append("\nNavigate the interactive resume using the following keyboard commands:")
+    md.append("\n- **Tab Switching:**")
+    md.append("  - `→` (Right Arrow) or `L` or `l`: Next tab")
+    md.append("  - `←` (Left Arrow) or `H` or `h`: Previous tab")
+    md.append("  - `1` through `5`: Directly jump to Overview, Experience, Skills, Projects, or Contributions tab respectively.")
+    md.append("\n- **Content Scrolling:**")
+    md.append("  - `↓` (Down Arrow) or `J` or `j`: Scroll down")
+    md.append("  - `↑` (Up Arrow) or `K` or `k`: Scroll up")
+    md.append("  - `Space` or `Page Down`: Page down")
+    md.append("  - `b` or `Page Up`: Page up (Back a page)")
+    md.append("\n- **Searching:**")
+    md.append("  - `/`: Activate search mode. The footer will show `Search: _`.")
+    md.append("  - Type your search term. It will appear in the footer.")
+    md.append("  - `Enter`: Submit the search. Matched terms will be highlighted in the content.")
+    md.append("  - `Esc`: Cancel search mode and clear the current search term.")
+    md.append("  - If matches are found, the footer will display `Searched: [term] [Match X of Y]`.")
+    md.append("  - `n`: Navigate to the next search match.")
+    md.append("  - `N` or `p`: Navigate to the previous search match.")
+    md.append("\n- **Quitting:**")
+    md.append("  - `Q` or `q`: Quit the application.")
+    md.append("\n")
 
     # Name as main header
     md.append(f"# {resume_data['name']}")

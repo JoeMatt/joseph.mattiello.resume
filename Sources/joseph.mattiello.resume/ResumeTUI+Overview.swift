@@ -16,7 +16,7 @@ extension ResumeTUI {
         // Helper to add text, highlighting if a search term is active
         let addHighlightedLine = { (text: String, attribute: Int32) in
             if !searchTerm.isEmpty {
-                attributedContent.append(contentsOf: highlightOccurrences(of: searchTerm, in: text, baseAttribute: attribute, highlightAttribute: A_HIGHLIGHT | attribute))
+                attributedContent.append(contentsOf: ResumeTUI.highlightOccurrences(of: searchTerm, in: text, baseAttribute: attribute, highlightAttribute: ResumeTUI.A_HIGHLIGHT | attribute))
             } else {
                 attributedContent.append((text, attribute))
             }
@@ -51,7 +51,7 @@ extension ResumeTUI {
         // Profile/Summary
         attributedContent.append( ("  PROFESSIONAL SUMMARY\n", headerColor) )
         attributedContent.append( ("  " + String(repeating: "─", count: 30) + "\n\n", defaultColor) )
-        let profileText = wrapText(resume.profile, indent: 2, width: contentWidth) + "\n"
+        let profileText = ResumeTUI.wrapText(resume.profile, indent: 2, width: contentWidth) + "\n"
         addHighlightedLine(profileText, defaultColor)
         attributedContent.append( ("\n", defaultColor) ) // Extra space
 

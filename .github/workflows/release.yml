@@ -1,0 +1,133 @@
+name: Create Release and Upload Build
+
+on:
+  push:
+    branches:
+      - master # Or 'main' if that's your primary branch name
+
+jobs:
+  build:
+    name: Build macOS Universal Application and Generate PDF
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: '5.9' # Specify your project's Swift version
+
+      - name: Build Universal Swift application
+        run: swift build -c release --product joseph.mattiello.resume --arch arm64 --arch x86_64
+
+      - name: Prepare Swift App Artifact
+        id: swift_artifact_prep
+        run: |
+          EXECUTABLE_PATH=".build/apple/Products/Release/joseph.mattiello.resume"
+          ARCHIVE_NAME="joseph.mattiello.resume-macos-universal.tar.gz"
+          cd "$(dirname "$EXECUTABLE_PATH")"
+          tar -czvf "${ARCHIVE_NAME}" "$(basename "$EXECUTABLE_PATH")"
+          echo "archive_path=$(pwd)/${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+          echo "swift_artifact_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+      
+      - name: Upload Swift App build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.swift_artifact_prep.outputs.swift_artifact_name }}
+          path: ${{ steps.swift_artifact_prep.outputs.archive_path }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5 # Updated to v5
+        with:
+          python-version: '3.x' # Use a generic Python 3.x version
+
+      - name: Install Python dependencies (if any)
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found, skipping pip install."
+          fi
+
+      - name: Run generate_html_resume.py
+        run: python generate_html_resume.py
+
+      - name: Prepare PDF Artifact
+        id: pdf_artifact_prep
+        run: |
+          PDF_PATH="output/resume.pdf"
+          PDF_ARTIFACT_NAME="resume.pdf"
+          echo "pdf_path=${PDF_PATH}" >> $GITHUB_OUTPUT
+          echo "pdf_artifact_name=${PDF_ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pdf_artifact_prep.outputs.pdf_artifact_name }} # This will be 'resume.pdf'
+          path: ${{ steps.pdf_artifact_prep.outputs.pdf_path }} # This will be 'output/resume.pdf'
+
+  create_release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Get current version and bump patch
+        id: versioning
+        run: |
+          git fetch --tags --force 
+          LATEST_TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_TAG="v0.1.0"
+          else
+            VERSION_STRING=${LATEST_TAG#v}
+            MAJOR=$(echo $VERSION_STRING | cut -d. -f1)
+            MINOR=$(echo $VERSION_STRING | cut -d. -f2)
+            PATCH=$(echo $VERSION_STRING | cut -d. -f3)
+            NEW_PATCH=$((PATCH + 1))
+            NEW_TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+          fi
+          echo "new_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
+          echo "Generated new tag: ${NEW_TAG}"
+
+      - name: Create new Git Tag
+        run: |
+          git config user.name "GitHub Action Release Bot"
+          git config user.email "actions@github.com"
+          git tag ${{ steps.versioning.outputs.new_tag }} -m "Release ${{ steps.versioning.outputs.new_tag }}"
+          git push origin ${{ steps.versioning.outputs.new_tag }}
+
+      - name: Download Swift App artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: joseph.mattiello.resume-macos-universal.tar.gz
+          # Artifact will be downloaded to the root of the workspace
+
+      - name: Download PDF artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: resume.pdf # Matches the 'name' used in upload-artifact for PDF
+          # Artifact will be downloaded to the root of the workspace
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.versioning.outputs.new_tag }}
+          name: Release ${{ steps.versioning.outputs.new_tag }}
+          body: |
+            Automated release for version ${{ steps.versioning.outputs.new_tag }}.
+            Contains macOS Universal (arm64 + x86_64) executable and PDF resume.
+          draft: false
+          prerelease: false
+          files: |
+            joseph.mattiello.resume-macos-universal.tar.gz
+            resume.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -16,18 +16,18 @@ jobs:
       - name: Define Swift Toolchain Variables
         id: swift_vars
         run: |
-          SWIFT_PKG_URL="https://download.swift.org/development/xcode/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a-osx.pkg"
+          SWIFT_PKG_URL="https://download.swift.org/swift-6.1-release/xcode/swift-6.1-RELEASE/swift-6.1-RELEASE-osx.pkg"
           SWIFT_PKG_FILENAME=$(basename "${SWIFT_PKG_URL}")
           echo "SWIFT_PKG_FILENAME=${SWIFT_PKG_FILENAME}" >> "$GITHUB_OUTPUT"
 
           PKG_BASENAME_FOR_TOOLCHAIN=$(basename "${SWIFT_PKG_FILENAME}" .pkg)
-          TOOLCHAIN_DIR_BASENAME=${PKG_BASENAME_FOR_TOOLCHAIN%-osx}
+          TOOLCHAIN_DIR_BASENAME=${PKG_BASENAME_FOR_TOOLCHAIN%-osx} # Should handle if -osx is not present
           TOOLCHAIN_NAME="${TOOLCHAIN_DIR_BASENAME}.xctoolchain"
           TOOLCHAIN_PATH="/Library/Developer/Toolchains/${TOOLCHAIN_NAME}"
           echo "TOOLCHAIN_PATH=${TOOLCHAIN_PATH}" >> "$GITHUB_OUTPUT"
           
-          # Use a unique part of the URL for the cache key to ensure it changes if the snapshot version changes
-          CACHE_IDENTIFIER="swift-dev-snap-2025-04-03-a" 
+          # Use a unique part of the URL for the cache key
+          CACHE_IDENTIFIER="swift-6-1-release"
           echo "CACHE_KEY_PKG=swift-pkg-${CACHE_IDENTIFIER}" >> "$GITHUB_OUTPUT"
         shell: bash
 
@@ -44,7 +44,7 @@ jobs:
           echo "Cache miss for Swift PKG. Downloading from ${{ env.SWIFT_PKG_URL }}..."
           curl -fsSL -o "${{ steps.swift_vars.outputs.SWIFT_PKG_FILENAME }}" "${{ env.SWIFT_PKG_URL }}"
         env:
-          SWIFT_PKG_URL: "https://download.swift.org/development/xcode/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a/swift-DEVELOPMENT-SNAPSHOT-2025-04-03-a-osx.pkg"
+          SWIFT_PKG_URL: "https://download.swift.org/swift-6.1-release/xcode/swift-6.1-RELEASE/swift-6.1-RELEASE-osx.pkg"
         shell: bash
 
       - name: Install Swift & Setup PATH

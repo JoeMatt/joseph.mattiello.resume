@@ -367,7 +367,7 @@ struct ResumeTUI {
 
         var ncursesY: Int32 = 0
         var ncursesX: Int32 = 0 // Keep track of X for potential future use, though not strictly needed now
-        wmove(contentWin, ncursesY, ncursesX) // Start at (0,0) of the content window
+        // wmove(contentWin, ncursesY, ncursesX) // Start at (0,0) of the content window - waddstr starts at current cursor pos
 
         let attributedSegmentedContent: [(String, Int32)]
         switch tuiState.currentTabIndex {
@@ -378,6 +378,16 @@ struct ResumeTUI {
             case 4: attributedSegmentedContent = formatContributionsTab(resume: tuiState.resume)
             default:
                 attributedSegmentedContent = [("Unknown tab", Cncurses.COLOR_PAIR(1))]
+        }
+
+        // Clamp scrollPosition to prevent out-of-bounds access
+        if attributedSegmentedContent.isEmpty {
+            tuiState.scrollPosition = 0
+        } else {
+            // Ensure scrollPosition is not less than 0
+            tuiState.scrollPosition = max(0, tuiState.scrollPosition)
+            // Ensure scrollPosition does not exceed the last valid index
+            tuiState.scrollPosition = min(tuiState.scrollPosition, attributedSegmentedContent.count - 1)
         }
 
         // Calculate total logical lines for scrolling (approximation based on newlines)
@@ -404,6 +414,14 @@ struct ResumeTUI {
         // Iterate through the attributed segments, starting from the scroll position
         // Note: tuiState.scrollPosition here refers to an *index* in the attributedSegmentedContent array,
         // not necessarily a logical line number. This will be refined for smoother scrolling later.
+        
+        // Reset cursor to top-left of content window before drawing lines for the current scroll position
+        wmove(contentWin, 0, 0) // Move to top-left (y=0, x=0) *inside* the content window border if applicable
+                                // If box() is used, drawing should start at (1,1) relative to window origin.
+                                // For now, assuming waddstr handles newlines correctly from (0,0)
+                                // and we are manually tracking lines within the window height.
+        ncursesY = 0 // Reset logical line counter for the window
+
         for i in tuiState.scrollPosition..<attributedSegmentedContent.count {
             if ncursesY >= contentWinHeight { // Stop if we've filled the visible part of the window
                 break
@@ -412,11 +430,20 @@ struct ResumeTUI {
             let (textSegment, attr) = attributedSegmentedContent[i]
 
             wattron(contentWin, attr)
-            waddstr(contentWin, textSegment) // ncurses handles newlines within textSegment
+            // If textSegment contains newlines, waddstr will handle them and move cursor.
+            // We need to ensure we don't try to write past the bottom of the window MANUALLY if waddstr doesn't clip perfectly.
+            // The check `ncursesY >= contentWinHeight` should ideally be more fine-grained if a single textSegment can span multiple lines
+            // and exceed the window height by itself.
+            // For simplicity, assuming each segment primarily fits or we check after each segment.
+            
+            // If starting position for text is important (e.g., after box border), use mvwaddstr or wmove then waddstr.
+            // With wmove(contentWin, 0,0) before loop, first waddstr starts at top-left.
+            // Subsequent waddstr continue from where last one left off.
+            waddstr(contentWin, textSegment) 
             wattroff(contentWin, attr)
 
-            ncursesY = getcury(contentWin) // New line
-            ncursesX = getcurx(contentWin) // New line
+            ncursesY = getcury(contentWin) // Update ncursesY based on where cursor is now
+            // ncursesX = getcurx(contentWin) // X position might be useful for very complex layouts
         }
 
         wrefresh(contentWin)

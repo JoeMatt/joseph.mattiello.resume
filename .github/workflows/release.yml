@@ -159,20 +159,27 @@ jobs:
           path: ${{ steps.prepare_artifact.outputs.archive_path }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5 # Updated to v5
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.x' # Use a generic Python 3.x version
+          python-version: '3.12'
 
-      - name: Install Python dependencies (if any)
+      - name: Install Python dependencies
         run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            echo "requirements.txt not found, skipping pip install."
-          fi
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run generate_html_resume.py
-        run: python generate_html_resume.py
+      - name: Generate PDF resume
+        id: pdf_generation
+        run: |
+          echo "Installing WeasyPrint system dependencies..."
+          brew install pango cairo gdk-pixbuf glib libffi
+          
+          python generate_html_resume.py
+          # Check if resume.pdf was created
+          if [ ! -f output/resume.pdf ]; then
+            echo "Error: resume.pdf not found in output directory"
+            exit 1
+          fi
 
       - name: Prepare PDF Artifact
         id: pdf_artifact_prep

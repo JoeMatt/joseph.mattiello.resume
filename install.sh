@@ -50,7 +50,7 @@ if [ "$1" == "--uninstall" ]; then
         if [ ! -f "$INSTALLED_EXECUTABLE_PATH" ]; then
             echo -e "${RED}Error: The installed executable at $INSTALLED_EXECUTABLE_PATH was not found.${NC}"
             echo -e "${YELLOW}It might have been moved or deleted already.${NC}"
-            read -p "Do you want to remove the installation info file ($INSTALL_INFO_FILE_BASE) anyway? (y/N): " REMOVE_INFO_CHOICE
+            read -p "Do you want to remove the installation info file ($INSTALL_INFO_FILE_BASE) anyway? (y/N): " REMOVE_INFO_CHOICE </dev/tty
             if [[ "$REMOVE_INFO_CHOICE" =~ ^[Yy]$ ]]; then
                 rm -f "$INSTALL_INFO_FILE_BASE"
                 echo -e "${GREEN}Removed $INSTALL_INFO_FILE_BASE.${NC}"
@@ -59,7 +59,7 @@ if [ "$1" == "--uninstall" ]; then
         fi
 
         echo -e "${YELLOW}Found installed application at: ${GREEN}$INSTALLED_EXECUTABLE_PATH${NC}"
-        read -p "Are you sure you want to remove it? (y/N): " CONFIRM_UNINSTALL
+        read -p "Are you sure you want to remove it? (y/N): " CONFIRM_UNINSTALL </dev/tty
 
         if [[ "$CONFIRM_UNINSTALL" =~ ^[Yy]$ ]]; then
             rm -f "$INSTALLED_EXECUTABLE_PATH" && \
@@ -266,7 +266,7 @@ ensure_ncurses_installed() {
         echo -e "${YELLOW}Please ensure ncurses (and its development headers) are installed manually.${NC}"
         # Optionally, you could choose to proceed with a warning or exit here
         # For now, let's proceed with a warning, the build will fail if it's truly missing.
-        read -p "Proceed with build anyway? (y/N): " PROCEED_NCURSES
+        read -p "Proceed with build anyway? (y/N): " PROCEED_NCURSES </dev/tty
         if [[ ! "$PROCEED_NCURSES" =~ ^[Yy]$ ]]; then
             exit 1
         fi
@@ -285,14 +285,14 @@ fi
 
 # Offer to install the binary
 echo -e "${YELLOW}Installation (Optional):${NC}"
-read -p "Do you want to install 'joseph.mattiello.resume' to a permanent location? (y/N): " INSTALL_CHOICE
+read -p "Do you want to install 'joseph.mattiello.resume' to a permanent location? (y/N): " INSTALL_CHOICE </dev/tty
 
 INSTALLED_PATH=""
 
 if [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then
     DEFAULT_INSTALL_DIR="$HOME/.local/bin"
     echo -e "Suggested installation directory: ${GREEN}$DEFAULT_INSTALL_DIR${NC}"
-    read -p "Enter installation directory (or press Enter for default): " CUSTOM_INSTALL_DIR
+    read -p "Enter installation directory (or press Enter for default): " CUSTOM_INSTALL_DIR </dev/tty
     
     INSTALL_DIR="${CUSTOM_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
     
@@ -342,10 +342,10 @@ fi
 # Offer to help create an alias if installation was successful
 if [ -n "$INSTALLED_PATH" ] && [[ "$INSTALL_CHOICE" =~ ^[Yy]$ ]]; then
     echo -e "\n${YELLOW}Alias Creation (Optional):${NC}"
-    read -p "Would you like instructions to create a shell alias for easy access (e.g., 'myresume')? (y/N): " ALIAS_CHOICE
+    read -p "Would you like instructions to create a shell alias for easy access (e.g., 'myresume')? (y/N): " ALIAS_CHOICE </dev/tty
     if [[ "$ALIAS_CHOICE" =~ ^[Yy]$ ]]; then
         DEFAULT_ALIAS_NAME="myresume"
-        read -p "Enter desired alias name (or press Enter for '$DEFAULT_ALIAS_NAME'): " CUSTOM_ALIAS_NAME
+        read -p "Enter desired alias name (or press Enter for '$DEFAULT_ALIAS_NAME'): " CUSTOM_ALIAS_NAME </dev/tty
         ALIAS_NAME="${CUSTOM_ALIAS_NAME:-$DEFAULT_ALIAS_NAME}"
         
         echo -e "${YELLOW}To create the alias, add the following line to your shell configuration file${NC}"
@@ -376,7 +376,7 @@ fi
 echo -e "${GREEN}Running Joseph Mattiello's Resume...${NC}"
 EXECUTABLE_PATH=".build/debug/joseph.mattiello.resume"
 if [ -f "$EXECUTABLE_PATH" ]; then
-    "$EXECUTABLE_PATH"
+    "$EXECUTABLE_PATH" </dev/tty
 else
     echo -e "${RED}Error: Executable not found at $EXECUTABLE_PATH${NC}"
     exit 1

@@ -24,7 +24,27 @@ git clone https://github.com/JoeMatt/joseph.mattiello.resume.git && cd joseph.ma
 
 Requirements: Swift 6.0+, ncurses (`brew install ncurses` on macOS), Git.
 
+## Preview
 
+### Installing
+
+<img width="570" height="354" alt="image" src="https://github.com/user-attachments/assets/865d09d8-18d2-42a9-a162-148964e3d2a3" />
+
+### Splash screen
+
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/06ce7671-6fdc-4019-a136-33b2ed27741b" />
+
+### Home
+
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/8f855111-e3cb-4ed7-b8ba-181d762c0932" />
+
+### Search
+
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/ca61c75b-14f3-4b5c-8098-80e6fdba1b57" />
+
+### Tabs
+
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/c613719a-3f07-454b-8362-509e372e115a" />
 
 ## ⌨️ Usage
 

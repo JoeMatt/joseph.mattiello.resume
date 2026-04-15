@@ -32,11 +32,11 @@ Requirements: Swift 6.0+, ncurses (`brew install ncurses` on macOS), Git.
 
 ### Splash screen
 
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/06ce7671-6fdc-4019-a136-33b2ed27741b" />
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/8bcc5796-672c-4b56-b2fb-972c32866ad6" />
 
 ### Home
 
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/8f855111-e3cb-4ed7-b8ba-181d762c0932" />
+<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/c59db19c-2d78-4ec0-96ab-4fe77d092417" />
 
 ### Search
 

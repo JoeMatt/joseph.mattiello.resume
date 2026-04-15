@@ -5,16 +5,24 @@
 View my interactive resume in your terminal by running:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh && bash
+curl -fsSL https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash
 ```
 
 or
 
 ```bash
-wget -O- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh && bash
+wget -qO- https://raw.githubusercontent.com/JoeMatt/joseph.mattiello.resume/master/install.sh | bash
 ```
 
-Requirements: Swift, Git, `curl` or `wget`, `unzip`, and a terminal that supports ncurses.
+### Swift-only Install
+
+If you have Swift and Git installed, you can skip the installer script entirely:
+
+```bash
+git clone https://github.com/JoeMatt/joseph.mattiello.resume.git && cd joseph.mattiello.resume && swift run
+```
+
+Requirements: Swift 6.0+, ncurses (`brew install ncurses` on macOS), Git.
 
 
 

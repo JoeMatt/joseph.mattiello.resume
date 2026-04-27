@@ -25,6 +25,8 @@ extension ResumeTUI {
 
         let sortedLanguages = resume.skills.programmingLanguages
             .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
+        let sortedTools = (resume.skills.toolsPlatforms ?? [])
+            .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
         let sortedSDKs = resume.skills.sdksApis
             .sorted { ($0.rating, $1.name) > ($1.rating, $0.name) }
 
@@ -49,6 +51,23 @@ extension ResumeTUI {
         }
 
         attributedContent.append(("\n", defaultColor))
+
+        if !sortedTools.isEmpty {
+            addHighlightedLine(leftPadding + "TOOLS & PLATFORMS\n", headerColor)
+            attributedContent.append((leftPadding + String(repeating: "─", count: "TOOLS & PLATFORMS".count) + "\n\n", defaultColor))
+
+            for tool in sortedTools {
+                let namePart = tool.name.padding(toLength: nameWidth, withPad: " ", startingAt: 0)
+                addHighlightedLine(leftPadding + namePart + " ", defaultColor)
+
+                let stars = String(repeating: "★", count: tool.rating) +
+                            String(repeating: "☆", count: 5 - tool.rating)
+                attributedContent.append((stars + " ", starColor))
+                attributedContent.append(("(\(tool.rating)/5)\n", defaultColor))
+            }
+
+            attributedContent.append(("\n", defaultColor))
+        }
 
         addHighlightedLine(leftPadding + "SDKS & APIS\n", headerColor)
         attributedContent.append((leftPadding + String(repeating: "─", count: "SDKS & APIS".count) + "\n\n", defaultColor))
@@ -76,15 +95,15 @@ extension ResumeTUI {
             lines.append(lang.name)
         }
 
+        // Tools & Platforms
+        for tool in (resume.skills.toolsPlatforms ?? []) {
+            lines.append(tool.name)
+        }
+
         // SDKs & APIs
         for sdk in resume.skills.sdksApis {
             lines.append(sdk.name)
         }
-        
-        // Tools & Technologies (if you add this to your Resume model and want to search it)
-        // for tool in resume.skills.toolsAndTechnologies {
-        //     lines.append(tool.name)
-        // }
 
         // Filter out any empty lines that might have been added and remove duplicates
         return Array(Set(lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })).sorted()

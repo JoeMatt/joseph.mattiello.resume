@@ -134,7 +134,12 @@ def generate_markdown(resume_data):
         md.append("\n## 🛠️ Skills")
 
         for category, skills in resume_data['skills'].items():
-            md.append(f"\n### {category.replace('_', ' ').title()}")
+            category_title = category.replace('_', ' ').title()
+            if category == "sdks_apis":
+                category_title = "SDKs & APIs"
+            elif category == "tools_platforms":
+                category_title = "Tools & Platforms"
+            md.append(f"\n### {category_title}")
 
             # Check if skills is a list of dictionaries with name and rating
             if isinstance(skills, list) and skills and isinstance(skills[0], dict) and 'name' in skills[0]:

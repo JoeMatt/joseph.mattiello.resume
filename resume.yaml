@@ -6,13 +6,24 @@ contact:
   github: https://github.com/JoeMatt
   email: mail@joemattiello.com
 
-profile: "Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full Stack, Systems Architecture, CI/CD, and DevOps/Automation. Extensive experience leading iOS & Android teams and developing for both platforms using native and cross-platform toolkits (e.g., ReactNative, Fuse.io). Proven track record building web and mobile native frontends, backends, applications, infrastructure, and embedded/IoT systems. Proficient in A.I. tools and code generation."
+profile: "Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full Stack, Systems Architecture, CI/CD, and DevOps/Automation. Extensive experience leading iOS & Android teams and developing for both platforms using native and cross-platform toolkits (e.g., ReactNative, Fuse.io). Proven track record building web and mobile native frontends, backends, applications, infrastructure, and embedded/IoT systems. Proficient in A.I.-assisted development, building custom AI skills/plugins/MCPs, and leveraging code generation and automation tooling across engineering workflows."
 
 experience:
   - company: Wayfair
     location: New York, NY (Remote)
-    title: L4 Mobile Engineer
+    title: L4 Mobile Engineer — App Infrastructure
+    start_date: "09/2025"
+    responsibilities:
+      - Integrated Datadog RUM performance tracking into the iOS app, providing real-time visibility into user experience metrics across releases.
+      - Built custom Datadog dashboards enabling teams to triage performance issues and compare metrics across time periods and releases.
+      - Designed and implemented a custom bootup task performance tracking system with companion Datadog reports, surfacing release-over-release regressions and improvements.
+      - Built AI-powered skills, plugins, and custom MCP servers for internal engineering teams, accelerating developer workflows.
+      - Developed Jira/GitHub automation flows and n8n workflows to streamline cross-team engineering processes.
+  - company: Wayfair
+    location: New York, NY (Remote)
+    title: L4 Mobile Engineer — Product Discovery
     start_date: "01/2025"
+    end_date: "09/2025"
     responsibilities:
       - Led and contributed to the development and enhancement of the product discovery feature-set, improving user engagement and conversion.
       - Spearheaded initiatives to optimize application startup performance and reduce network overhead, resulting in a faster and more responsive user experience.
@@ -309,11 +320,17 @@ open_source_contributions:
     - title: Project Link
       url: https://github.com/iMokhles/EGYWebViewController
   - name: virtualjaguar-libretro
-    description: Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned Virtual Jaguar project.
+    description: Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned project. Delivered extensive bug fixes and the first open-source Jaguar CD emulation support. Leveraged AI for development, A/B image regression testing, and cross-platform CI with automated binary publishing.
     app_store_link: ""
     links:
       - title: Project Link
         url: https://github.com/libretro/virtualjaguar-libretro
+  - name: Atari Jaguar 240p Test Suite
+    description: Maintainer and contributor to the Jaguar 240p Test Suite for display calibration and video output verification on Atari Jaguar hardware. Added new test patterns, bug fixes, and AI-assisted test automation with cross-platform GitHub Actions CI.
+    app_store_link: ""
+    links:
+      - title: Project Repository
+        url: https://github.com/JoeMatt/atari_jaguar_240p_test_suite
   - name: PokeMini
     description: "Contributed to the PokeMini Libretro core, an emulator for the Pokémon Mini handheld, including a fix for buffer overflows with long filename paths (PR #17)."
     app_store_link: ""
@@ -357,6 +374,18 @@ skills:
       rating: 3
     - name: LUA
       rating: 3
+
+  tools_platforms:
+    - name: Datadog (RUM, Dashboards, APM)
+      rating: 4
+    - name: n8n (Workflow Automation)
+      rating: 4
+    - name: AI/LLM Tooling (MCPs, Skills, Plugins, Agents)
+      rating: 5
+    - name: GitHub Actions / CI/CD
+      rating: 5
+    - name: Jira Automation
+      rating: 4
 
   sdks_apis:
     - name: iOS/tvOS SDK

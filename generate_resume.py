@@ -276,9 +276,11 @@ def add_skills_section(doc, skills_data):
     for category_key, skill_list in skills_data.items():
         # Convert category_key (e.g., 'programming_languages') to a title (e.g., 'Programming Languages')
         category_title = sanitize_latex_text(category_key.replace('_', ' ').title())
-        # Special handling for 'sdks_apis' to 'SDKs & APIs' for better display
+        # Special handling for display names
         if category_key == "sdks_apis":
             category_title = "SDKs \\& APIs" # Escape the ampersand for LaTeX
+        elif category_key == "tools_platforms":
+            category_title = "Tools \\& Platforms"
 
         organized_skills[category_title] = []
         for skill_item in skill_list:

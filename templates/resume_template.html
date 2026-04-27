@@ -117,6 +117,24 @@
                 </div>
             </div>
 
+            <!-- Tools & Platforms Section (with bar graphs) -->
+            {% if resume_data.skills and resume_data.skills.tools_platforms %}
+            <div class="section tools-platforms-sidebar">
+                <h2>TOOLS & PLATFORMS</h2>
+                <div class="expertise-items">
+                    {% set sorted_tools = resume_data.skills.tools_platforms | sort(attribute='name') | sort(attribute='rating', reverse=True) %}
+                    {% for skill in sorted_tools %}
+                        <div class="expertise-item">
+                            <div class="expertise-name">{{ skill.name }}</div>
+                            <div class="expertise-bar-container">
+                                <div class="expertise-bar" style="width: {{ (skill.rating / 5) * 100 }}%;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- SDKs & APIs Section (with bar graphs) -->
             <div class="section sdks-apis-sidebar">
                 <h2>SDKs & APIs</h2>

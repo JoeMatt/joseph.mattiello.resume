@@ -80,12 +80,22 @@ extension ResumeTUI {
             attributedContent.append((ratingText, skillRatingColor))
         }
 
+        let sortedTools = (resume.skills.toolsPlatforms ?? []).sorted { $0.rating > $1.rating }.prefix(5)
+        if !sortedTools.isEmpty {
+            attributedContent.append( ("\n    Top Tools & Platforms:\n", ResumeTUI.A_BOLD | valueColor) )
+            for tool in sortedTools {
+                let toolText = "    \(tool.name.padding(toLength: 25, withPad: " ", startingAt: 0)) "
+                let ratingText = "\(String(repeating: "★", count: tool.rating))\(String(repeating: "☆", count: 5 - tool.rating))\n"
+                addHighlightedLine(toolText, defaultColor)
+                attributedContent.append((ratingText, skillRatingColor))
+            }
+        }
+
         attributedContent.append( ("\n    Top SDKs/APIs:\n", ResumeTUI.A_BOLD | valueColor) )
         let sortedSDKs = resume.skills.sdksApis.sorted { $0.rating > $1.rating }.prefix(5)
 
         for sdk in sortedSDKs {
             let sdkText = "    \(sdk.name.padding(toLength: 25, withPad: " ", startingAt: 0)) "
-            // Rating stars should not be highlighted by search term
             let ratingText = "\(String(repeating: "★", count: sdk.rating))\(String(repeating: "☆", count: 5 - sdk.rating))\n"
             addHighlightedLine(sdkText, defaultColor)
             attributedContent.append((ratingText, skillRatingColor))
@@ -132,6 +142,11 @@ extension ResumeTUI {
         let topLanguages = resume.skills.programmingLanguages.sorted { $0.rating > $1.rating }.prefix(5)
         for lang in topLanguages {
             lines.append(lang.name)
+        }
+
+        let topTools = (resume.skills.toolsPlatforms ?? []).sorted { $0.rating > $1.rating }.prefix(5)
+        for tool in topTools {
+            lines.append(tool.name)
         }
 
         let topSDKs = resume.skills.sdksApis.sorted { $0.rating > $1.rating }.prefix(5)

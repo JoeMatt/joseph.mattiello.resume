@@ -86,10 +86,12 @@ struct Link: Codable {
 /// Skills section
 struct Skills: Codable {
     let programmingLanguages: [Skill]
+    let toolsPlatforms: [Skill]?
     let sdksApis: [Skill]
-    
+
     enum CodingKeys: String, CodingKey {
         case programmingLanguages = "programming_languages"
+        case toolsPlatforms = "tools_platforms"
         case sdksApis = "sdks_apis"
     }
 }

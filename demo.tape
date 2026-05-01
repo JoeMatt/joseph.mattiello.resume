@@ -6,7 +6,7 @@ Output demo.webm
 
 Set Shell "zsh"
 Set FontSize 14
-Set FontFamily "JetBrains Mono"
+Set FontFamily "JetBrainsMono Nerd Font"
 Set Width 1200
 Set Height 700
 Set Padding 20

@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Part of `personal-os`
+
+This repo is a satellite of [`personal-os`](file:///Users/jmattiello/Workspace/personal-os) at `~/Workspace/personal-os`. A fresh agent session here should read `personal-os/AGENTS.md` first for shared conventions:
+
+- **`VOICE.md`** — voice rules for any public-facing prose (blog, release notes, READMEs, social).
+- **`decisions/`** — cross-repo MADR-numbered ADRs.
+- **`journal/`** — daily orchestration log; touch entries when shipping work in this repo.
+- **`INBOX.md`** — things-to-act-on across all projects.
+- **`wiki/projects-index.md`** — registry of every active repo and how it relates to this one.
+
+Don't edit `personal-os/raw/` from a satellite — that's the central drop-zone, one-way.
+
 ## Project Overview
 
 This is Joseph Mattiello's interactive resume — a Swift-based TUI (Terminal User Interface) application that renders resume data from a YAML file using ncurses. It also includes Python scripts to generate HTML/PDF and Markdown versions.

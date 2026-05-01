@@ -24,27 +24,7 @@ git clone https://github.com/JoeMatt/joseph.mattiello.resume.git && cd joseph.ma
 
 Requirements: Swift 6.0+, ncurses (`brew install ncurses` on macOS), Git.
 
-## Preview
 
-### Installing
-
-<img width="570" height="354" alt="image" src="https://github.com/user-attachments/assets/865d09d8-18d2-42a9-a162-148964e3d2a3" />
-
-### Splash screen
-
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/8bcc5796-672c-4b56-b2fb-972c32866ad6" />
-
-### Home
-
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/c59db19c-2d78-4ec0-96ab-4fe77d092417" />
-
-### Search
-
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/ca61c75b-14f3-4b5c-8098-80e6fdba1b57" />
-
-### Tabs
-
-<img width="1306" height="940" alt="image" src="https://github.com/user-attachments/assets/c613719a-3f07-454b-8362-509e372e115a" />
 
 ## ⌨️ Usage
 
@@ -86,13 +66,23 @@ Navigate the interactive resume using the following keyboard commands:
 
 ## 📝 Summary
 
-Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full Stack, Systems Architecture, CI/CD, and DevOps/Automation. Extensive experience leading iOS & Android teams and developing for both platforms using native and cross-platform toolkits (e.g., ReactNative, Fuse.io). Proven track record building web and mobile native frontends, backends, applications, infrastructure, and embedded/IoT systems. Proficient in A.I. tools and code generation.
+Engineering Leader and Mobile Architect, 17+ years iOS — started before the SDK shipped. Creator of Provenance EMU (App Store, 388k+ downloads, 6.3k stars). Three US patents (Sense Networks). Previously Director of iOS Platform at NewsCorp, leading an 8-region global team. Currently on Wayfair's App Infrastructure team — ~$2M/year in bandwidth savings, custom MCP servers and AI tooling for 60+ mobile engineers. Selectively considering Head of AI Platform / VP Engineering / Director / CTO roles plus a small number of consulting engagements. Details at joemattiello.dev.
 
 ## 💼 Experience
 
-### L4 Mobile Engineer | Wayfair | New York, NY (Remote)
+### L4 Mobile Engineer — App Infrastructure | Wayfair | New York, NY (Remote)
 
-*01/2025 - Present*
+*09/2025 - Present*
+
+**Responsibilities:**
+- Shipped MP4 compression and caching strategy producing ~$2M/year in recurring bandwidth savings.
+- Built custom MCP servers, Claude skills/plugins, and n8n automation for 60+ mobile engineers.
+- Designed bootup task performance tracking system with Datadog dashboards surfacing release-over-release regressions.
+- Integrated Datadog RUM into the iOS app for real-time per-release visibility into user-experience metrics.
+
+### L4 Mobile Engineer — Product Discovery | Wayfair | New York, NY (Remote)
+
+*01/2025 - 09/2025*
 
 **Responsibilities:**
 - Led and contributed to the development and enhancement of the product discovery feature-set, improving user engagement and conversion.
@@ -206,9 +196,9 @@ Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full St
 
 | Skill | Proficiency |
 | --- | --- |
+| C | ⭐⭐⭐⭐⭐ |
 | Objective-C | ⭐⭐⭐⭐⭐ |
 | Swift | ⭐⭐⭐⭐⭐ |
-| C | ⭐⭐⭐⭐ |
 | C++ | ⭐⭐⭐⭐ |
 | JavaScript | ⭐⭐⭐⭐ |
 | C# | ⭐⭐⭐ |
@@ -216,7 +206,17 @@ Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full St
 | Python | ⭐⭐⭐ |
 | Ruby | ⭐⭐⭐ |
 
-### Sdks Apis
+### Tools & Platforms
+
+| Skill | Proficiency |
+| --- | --- |
+| AI/LLM Tooling (MCPs, Skills, Plugins, Agents) | ⭐⭐⭐⭐⭐ |
+| GitHub Actions / CI/CD | ⭐⭐⭐⭐⭐ |
+| Datadog (RUM, Dashboards, APM) | ⭐⭐⭐⭐ |
+| Jira Automation | ⭐⭐⭐⭐ |
+| n8n (Workflow Automation) | ⭐⭐⭐⭐ |
+
+### SDKs & APIs
 
 | Skill | Proficiency |
 | --- | --- |
@@ -358,10 +358,17 @@ Contributed to EGYWebViewController, an in-app browser component for iOS.
 
 ### virtualjaguar-libretro
 
-Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned Virtual Jaguar project.
+Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned project. Delivered extensive bug fixes and the first open-source Jaguar CD emulation support. Leveraged AI for development, A/B image regression testing, and cross-platform CI with automated binary publishing.
 
 **Links:**
 - [Project Link](https://github.com/libretro/virtualjaguar-libretro)
+
+### Atari Jaguar 240p Test Suite
+
+Maintainer and contributor to the Jaguar 240p Test Suite for display calibration and video output verification on Atari Jaguar hardware. Added new test patterns, bug fixes, and AI-assisted test automation with cross-platform GitHub Actions CI.
+
+**Links:**
+- [Project Repository](https://github.com/JoeMatt/atari_jaguar_240p_test_suite)
 
 ### PokeMini
 
@@ -450,7 +457,7 @@ Submitted major patches to the Pbxbuild tool, enabling conversion of complex Xco
 
 ---
 
-*Last updated: May 07, 2025*
+*Last updated: May 01, 2026*
 
 *This README was automatically generated from my [resume.yaml](resume.yaml) file.*
 

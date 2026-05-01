@@ -6,7 +6,7 @@ contact:
   github: https://github.com/JoeMatt
   email: mail@joemattiello.com
 
-profile: "Hands-on Engineering Leader and Mobile Architect specializing in Mobile, Full Stack, Systems Architecture, CI/CD, and DevOps/Automation. Extensive experience leading iOS & Android teams and developing for both platforms using native and cross-platform toolkits (e.g., ReactNative, Fuse.io). Proven track record building web and mobile native frontends, backends, applications, infrastructure, and embedded/IoT systems. Proficient in A.I.-assisted development, building custom AI skills/plugins/MCPs, and leveraging code generation and automation tooling across engineering workflows."
+profile: "Engineering Leader and Mobile Architect, 17+ years iOS — started before the SDK shipped. Creator of Provenance EMU (App Store, 388k+ downloads, 6.3k stars). Three US patents (Sense Networks). Previously Director of iOS Platform at NewsCorp, leading an 8-region global team. Currently on Wayfair's App Infrastructure team — ~$2M/year in bandwidth savings, custom MCP servers and AI tooling for 60+ mobile engineers. Selectively considering Head of AI Platform / VP Engineering / Director / CTO roles plus a small number of consulting engagements. Details at joemattiello.dev."
 
 experience:
   - company: Wayfair
@@ -14,11 +14,10 @@ experience:
     title: L4 Mobile Engineer — App Infrastructure
     start_date: "09/2025"
     responsibilities:
-      - Integrated Datadog RUM performance tracking into the iOS app, providing real-time visibility into user experience metrics across releases.
-      - Built custom Datadog dashboards enabling teams to triage performance issues and compare metrics across time periods and releases.
-      - Designed and implemented a custom bootup task performance tracking system with companion Datadog reports, surfacing release-over-release regressions and improvements.
-      - Built AI-powered skills, plugins, and custom MCP servers for internal engineering teams, accelerating developer workflows.
-      - Developed Jira/GitHub automation flows and n8n workflows to streamline cross-team engineering processes.
+      - Shipped MP4 compression and caching strategy producing ~$2M/year in recurring bandwidth savings.
+      - Built custom MCP servers, Claude skills/plugins, and n8n automation for 60+ mobile engineers.
+      - Designed bootup task performance tracking system with Datadog dashboards surfacing release-over-release regressions.
+      - Integrated Datadog RUM into the iOS app for real-time per-release visibility into user-experience metrics.
   - company: Wayfair
     location: New York, NY (Remote)
     title: L4 Mobile Engineer — Product Discovery

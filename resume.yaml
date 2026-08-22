@@ -228,17 +228,21 @@ open_source_contributions:
     - title: "PR #3055"
       url: https://github.com/utmapp/UTM/pull/3055
   - name: retroarch
-    description: Contributed multiple pull requests, including fixes and improvements.
+    description: "Wrote the AVFoundation camera driver for iOS/macOS/tvOS, credited by name in the commit that upstreamed it. Also authored and merged four more PRs directly, the CoreMIDI, CoreLocation, and CoreAudio microphone drivers (iOS/macOS, plus a later macOS-specific split)."
     app_store_link: ""
     links:
     - title: Project Link
       url: https://www.retroarch.com/
-    - title: "PR #17590"
-      url: https://github.com/libretro/RetroArch/pull/17590
-    - title: "PR #17591"
-      url: https://github.com/libretro/RetroArch/pull/17591
-    - title: "PR #17569"
+    - title: "PR #17657 (AVFoundation camera driver credit)"
+      url: https://github.com/libretro/RetroArch/pull/17657
+    - title: "PR #17569 (CoreMIDI driver)"
       url: https://github.com/libretro/RetroArch/pull/17569
+    - title: "PR #17591 (CoreLocation driver)"
+      url: https://github.com/libretro/RetroArch/pull/17591
+    - title: "PR #17590 (CoreAudio microphone driver)"
+      url: https://github.com/libretro/RetroArch/pull/17590
+    - title: "PR #17990 (macOS CoreAudio microphone split)"
+      url: https://github.com/libretro/RetroArch/pull/17990
   - name: reicast
     description: Contributed UIKit UI to reicast, a popular emulator for the Sega Dreamcast.
     app_store_link: ""

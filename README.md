@@ -255,13 +255,15 @@ Contributed a pull request to UTM, a popular virtual machine host for iOS and ma
 
 ### retroarch
 
-Contributed multiple pull requests, including fixes and improvements.
+Wrote the AVFoundation camera driver for iOS/macOS/tvOS, credited by name in the commit that upstreamed it. Also authored and merged four more PRs directly, the CoreMIDI, CoreLocation, and CoreAudio microphone drivers (iOS/macOS, plus a later macOS-specific split).
 
 **Links:**
 - [Project Link](https://www.retroarch.com/)
-- [PR #17590](https://github.com/libretro/RetroArch/pull/17590)
-- [PR #17591](https://github.com/libretro/RetroArch/pull/17591)
-- [PR #17569](https://github.com/libretro/RetroArch/pull/17569)
+- [PR #17657 (AVFoundation camera driver credit)](https://github.com/libretro/RetroArch/pull/17657)
+- [PR #17569 (CoreMIDI driver)](https://github.com/libretro/RetroArch/pull/17569)
+- [PR #17591 (CoreLocation driver)](https://github.com/libretro/RetroArch/pull/17591)
+- [PR #17590 (CoreAudio microphone driver)](https://github.com/libretro/RetroArch/pull/17590)
+- [PR #17990 (macOS CoreAudio microphone split)](https://github.com/libretro/RetroArch/pull/17990)
 
 ### reicast
 

@@ -179,7 +179,7 @@
                     {% for project in resume_data.personal_projects %}
                     <div class="project-item">
                         <div class="project-name">{{ project.name }}</div>
-                        <div class="project-description">{{ project.description | truncate(80) }}</div>
+                        <div class="project-description">{% if '\n' in project.description %}{{ project.description.split('\n')[0] | truncate(260) }}{% else %}{{ project.description | truncate(80) }}{% endif %}</div>
                         {% if project.technologies %}
                         <div class="project-tech">
                             <i class="fas fa-code"></i> {{ project.technologies | join(', ') | truncate(40) }}

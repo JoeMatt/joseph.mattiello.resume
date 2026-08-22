@@ -66,7 +66,7 @@ Navigate the interactive resume using the following keyboard commands:
 
 ## 📝 Summary
 
-Engineering Leader and Mobile Architect, 17+ years iOS — started before the SDK shipped. Creator of Provenance EMU (App Store, 388k+ downloads, 6.3k stars). Three US patents (Sense Networks). Previously Director of iOS Platform at NewsCorp, leading an 8-region global team. Currently on Wayfair's App Infrastructure team — ~$2M/year in bandwidth savings, custom MCP servers and AI tooling for 60+ mobile engineers. Selectively considering Head of AI Platform / VP Engineering / Director / CTO roles plus a small number of consulting engagements. Details at joemattiello.dev.
+Engineering Leader and Mobile Architect, 17+ years iOS — started before the SDK shipped. Creator of Provenance EMU (App Store, 388k+ downloads, 6.3k stars). Three US patents (Sense Networks). Previously Director of iOS Platform at NewsCorp, leading an 8-region global team. Currently on Wayfair's App Infrastructure team — ~$2M/year in bandwidth savings, custom MCP servers and AI tooling for 60+ mobile engineers. The same agent tooling shipped five Virtual Jaguar emulator releases in 24 days. Selectively considering Head of AI Platform / VP Engineering / Director / CTO roles plus a small number of consulting engagements. Details at joemattiello.dev.
 
 ## 💼 Experience
 
@@ -356,13 +356,6 @@ Contributed to EGYWebViewController, an in-app browser component for iOS.
 **Links:**
 - [Project Link](https://github.com/iMokhles/EGYWebViewController)
 
-### virtualjaguar-libretro
-
-Maintainer of the Libretro core for Virtual Jaguar, an Atari Jaguar emulator. Hard fork of the original abandoned project. Delivered extensive bug fixes and the first open-source Jaguar CD emulation support. Leveraged AI for development, A/B image regression testing, and cross-platform CI with automated binary publishing.
-
-**Links:**
-- [Project Link](https://github.com/libretro/virtualjaguar-libretro)
-
 ### Atari Jaguar 240p Test Suite
 
 Maintainer and contributor to the Jaguar 240p Test Suite for display calibration and video output verification on Atari Jaguar hardware. Added new test patterns, bug fixes, and AI-assisted test automation with cross-platform GitHub Actions CI.
@@ -400,6 +393,15 @@ Maintained a fork of PINCache.Swift, a fast, non-deadlocking parallel object cac
 tvOS & iOS multi-platform emulator. Author and PM.
 
 **Links:** [Website](https://provenance-emu.com)
+
+### Virtual Jaguar (libretro)
+
+Maintainer of the hard-forked Atari Jaguar core. Five releases in 24 days: the first cross-platform open-source Jaguar CD emulation, and the first shipped Jaguar Voice Modem emulation.
+Revived from an abandoned upstream. All 10 locally-available CD titles boot to game code under both HLE and real BIOS. The Voice Modem protocol was reverse-engineered by disassembling the retail Ultra Vortek ROM, and Ultra Vortek modem netplay is verified on two physical iOS devices. Also JagLink/CatBox link play over TCP and RetroArch netplay, 2x internal resolution with real supersampling, full-precision gouraud rendering, JagGD cartridge support, and Team Tap / Pro Controller / 6D peripherals.
+Development ran on a purpose-built Claude Code harness: per-issue agent guides, a custom debug skill routing 105 headless probes and harnesses, worktree-parallel agents, and AI review alongside an acid-test regression gate across 23 CI workflows. The same process published a falsified hypothesis and a retraction: the experimental DRAM/bus timing model closes ~0% of the measured Doom pacing gap, and an earlier +2.0% figure was withdrawn once the bus model was found to double-count the 68000's own cycle. 788 commits over the tagged range.
+
+
+**Links:** [GitHub](https://github.com/libretro/virtualjaguar-libretro) | [Releases](https://github.com/libretro/virtualjaguar-libretro/releases)
 
 ### Hero Transitions
 
@@ -457,7 +459,7 @@ Submitted major patches to the Pbxbuild tool, enabling conversion of complex Xco
 
 ---
 
-*Last updated: May 01, 2026*
+*Last updated: August 21, 2026*
 
 *This README was automatically generated from my [resume.yaml](resume.yaml) file.*
 

@@ -154,13 +154,16 @@ personal_projects:
     description: |
       Maintainer of the hard-forked Atari Jaguar core. Five releases in 24 days: the first cross-platform open-source Jaguar CD emulation, and the first shipped Jaguar Voice Modem emulation.
       Revived from an abandoned upstream. All 10 locally-available CD titles boot to game code under both HLE and real BIOS. The Voice Modem protocol was reverse-engineered by disassembling the retail Ultra Vortek ROM, and Ultra Vortek modem netplay is verified on two physical iOS devices. Also JagLink/CatBox link play over TCP and RetroArch netplay, 2x internal resolution with real supersampling, full-precision gouraud rendering, JagGD cartridge support, and Team Tap / Pro Controller / 6D peripherals.
-      Development ran on a purpose-built Claude Code harness: per-issue agent guides, a custom debug skill routing 105 headless probes and harnesses, worktree-parallel agents, and AI review alongside an acid-test regression gate across 23 CI workflows. The same process published a falsified hypothesis and a retraction: the experimental DRAM/bus timing model closes ~0% of the measured Doom pacing gap, and an earlier +2.0% figure was withdrawn once the bus model was found to double-count the 68000's own cycle. 788 commits over the tagged range.
+      October 2026 added a standalone desktop app for the same core (jaguar.provenance-emu.com/app.html): ~15k lines of C++17 over SDL3, Dear ImGui and OpenGL 3.3, driving the core through the same retro_* API RetroArch uses, so every core option and save state behaves the same in both. It has a game library identified by CRC32 against the No-Intro and Redump databases with box art, RetroArch .slangp shaders through librashader, cheats, RetroAchievements with a hardcore mode, save states with thumbnails, per-device and per-game input remapping, and link-cable netplay over LAN. One reusable CI workflow builds and verifies every package: a universal macOS .app (Apple Silicon + Intel), a Windows installer and portable zip, Linux AppImage and .deb for x86_64 and aarch64, each listed in SHA256SUMS.txt, with Developer ID signing and notarization in the pipeline and Homebrew, winget, Scoop and Flatpak manifest templates rendered on every run.
+      Development ran on a purpose-built Claude Code harness: per-issue agent guides, a custom debug skill routing 105 headless probes and harnesses, worktree-parallel agents, and AI review alongside an acid-test regression gate across 23 CI workflows. The same process published a falsified hypothesis and a retraction: the experimental DRAM/bus timing model closes ~0% of the measured Doom pacing gap, and an earlier +2.0% figure was withdrawn once the bus model was found to double-count the 68000's own cycle. 1,290 commits from v2.3.2 to v3.8.0.
     app_store_link: ""
     links:
       - title: GitHub
         url: https://github.com/libretro/virtualjaguar-libretro
       - title: Releases
         url: https://github.com/libretro/virtualjaguar-libretro/releases
+      - title: Desktop app
+        url: https://jaguar.provenance-emu.com/app.html
   - name: Hero Transitions
     description: Maintained and contributed to Hero, a library for building custom view controller transitions in Swift.
     app_store_link: ""
